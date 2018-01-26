@@ -10,15 +10,17 @@ debug = False if env == 'prod' else True
 app = Flask(__name__)
 api = Api(app)
 
+master_db = {}
+
 
 @api.route('/submit_uri')
-class ParseURI(Resource):
+class IntakeURI(Resource):
     '''
     Class to handle intake of URIs reported as possibly containing abuse, which will then
      be parsed and evaluated to automatically determine how closely they match existing
      abuse fingerprints
     '''
-    _archive = {}
+    _archive = master_db
 
     def get(self):
         '''
@@ -35,6 +37,25 @@ class ParseURI(Resource):
         uri = request.form['uri']
         self._archive[uri] = (self._archive[uri] + 1) if self._archive.get(uri, None) else 1
         return {'submit_uri': 'URI queued for parsing: {}'.format(uri)}
+
+
+@api.route('/status_uri')
+class StatusURI(Resource):
+    '''
+    Class to provide status on a specific URI which has already been submitted to the API
+    '''
+    _archive = master_db
+
+    def put(self):
+        '''
+        Displays the status of the URI, if previously submitted
+        :return:
+        '''
+        uri = request.form['uri']
+        message = '{} has not been submitted'.format(uri)
+        if self._archive.get(uri, False):
+            message = '{} is awaiting classification'.format(uri)
+        return {'status': message}
 
 
 if __name__ == '__main__':
