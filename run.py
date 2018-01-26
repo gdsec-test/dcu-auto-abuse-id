@@ -35,8 +35,13 @@ class IntakeURI(Resource):
         :return:
         '''
         uri = request.form['uri']
-        self._archive[uri] = (self._archive[uri] + 1) if self._archive.get(uri, None) else 1
-        return {'submit_uri': 'URI queued for parsing: {}'.format(uri)}
+        target = request.form.get('verified', False)
+        message = '{} will be added to known {} phishing'.format(uri, target)
+        if not target:
+            message = 'URI queued for parsing: {}'.format(uri)
+            self._archive[uri] = (self._archive[uri] + 1) if self._archive.get(uri, None) else 1
+
+        return {'submit_uri': message}
 
 
 @api.route('/status_uri')
