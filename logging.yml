@@ -27,11 +27,6 @@ loggers:
         handlers: [console]
         propagate: no
 
-    celery.tasks:
-        level: INFO
-        handlers: [console]
-        propagate: no
-
 root:
     level: INFO
     handlers: [console]
