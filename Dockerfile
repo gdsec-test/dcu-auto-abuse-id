@@ -22,7 +22,7 @@ RUN cd /usr/local/share && \
     curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj && \
     ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs
 
-COPY ./run.py ./settings.py ./logging.yml /app/
+COPY ./run.py ./settings.py ./logging.yml ./runserver.sh ./uwsgi.ini /app/
 
 COPY . /tmp
 
@@ -49,4 +49,4 @@ EXPOSE 5000
 USER dcu
 WORKDIR /app
 
-ENTRYPOINT ["/app/run.sh"]
+ENTRYPOINT ["/app/runserver.sh"]
