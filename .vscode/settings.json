@@ -1,0 +1,13 @@
+// Place your settings in this file to overwrite default and user settings.
+{ "python.pythonPath": "/Users/chauser/.envs/auto_abuse_id/bin/python",
+    "python.unitTest.nosetestsEnabled": true,
+    "python.unitTest.nosetestArgs": [
+        "--where=tests/"
+    ],
+    "python.linting.pylintArgs": [
+        "--disable=C0301"
+    ],
+    "python.linting.pep8Args": [
+        "--ignore=E501"
+    ]
+}
