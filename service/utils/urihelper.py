@@ -23,10 +23,7 @@ class URIHelper:
                 status = str(bad_site.status_code)
                 if status[0] in ["1", "2", "3"]:
                     return True
-                elif status in ["406", "403"]:
-                    return True
-                else:
-                    return False
+                return status in ["406", "403"]
         except Exception as e:
             self._logger.error(
                 "Error in determining if url resolves {} : {}".format(
