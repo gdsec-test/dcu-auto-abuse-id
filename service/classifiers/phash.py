@@ -90,7 +90,15 @@ class PHash(Classifier):
         return (True, screenshot)
 
     def _confidence(self, hash1, hash2):
+        '''
+        Calculate the percentage of like bits by subtracting the number
+        of positions that differ from the total number of bits
+        '''
         return 1 - (self._phash_distance(hash1, hash2) / 64.0)
 
     def _phash_distance(self, hash1, hash2):
+        '''
+        Count the number of bit positions that differ between the two
+        hash's
+        '''
         return bin(int(hash1, 16) ^ int(hash2, 16)).count('1')
