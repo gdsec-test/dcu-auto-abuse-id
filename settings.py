@@ -9,13 +9,13 @@ class AppConfig(object):
     DB = 'test'
     DB_USER = 'dbuser'
     DB_HOST = 'localhost'
-    COLLECTION = 'incidents'
+    COLLECTION = 'fingerprints'
     LOGGING_COLLECTION = 'logs'
 
     def __init__(self):
-        self.DB_PASS = os.getenv('DB_PASS') or 'password'
-        self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(self.DB_PASS))
-        self.DBURL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
+        self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
+            else 'password'
+        self.DB_URL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
 
 
 class ProductionAppConfig(AppConfig):
@@ -37,7 +37,6 @@ class OTEAppConfig(AppConfig):
 
 
 class DevelopmentAppConfig(AppConfig):
-    DBURL = 'mongodb://devuser:phishstory@10.22.188.208/devphishstory'
     DB = 'devphishstory'
     DB_HOST = '10.22.188.208'
     DB_USER = 'devuser'
@@ -46,9 +45,8 @@ class DevelopmentAppConfig(AppConfig):
         super(DevelopmentAppConfig, self).__init__()
 
 
-class TestingConfig:
-    DBURL = 'mongodb://localhost/devphishstory'
-    DB = 'test'
+class TestingConfig(AppConfig):
+    DB_URL = 'mongodb://localhost/devphishstory'
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017
