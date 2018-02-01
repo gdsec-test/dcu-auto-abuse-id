@@ -9,6 +9,15 @@ from interface import Classifier
 
 class PHash(Classifier):
 
+    CLASSIFICATION_DATA = dict(
+        uri=None,
+        type='UNKNOWN',
+        confidence=0.0,
+        target=None,
+        method='pHash',
+        meta=dict()
+    )
+
     def __init__(self, settings):
         self._logger = logging.getLogger(__name__)
         self._client = pymongo.MongoClient(
@@ -18,39 +27,26 @@ class PHash(Classifier):
         self._urihelper = URIHelper()
 
     def classify(self, url, confidence=0.75):
-        ret = dict(
-            uri=url,
-            type='UNKNOWN',
-            confidence=0.0,
-            target=None,
-            method='pHash',
-            meta=dict()
-        )
         valid, screenshot = self._validate(url)
         if not valid:
-            return ret
+            return PHash.CLASSIFICATION_DATA
         hash_candidate = imagehash.phash(Image.open(io.BytesIO(screenshot)))
-        res_doc, matching_hash = None, None
+        res_doc = None
         max_certainty = confidence
         try:
             for doc in self._search(hash_candidate):
-                doc_hash = imagehash.hex_to_hash(doc['chunk1'] + doc['chunk2'] + doc['chunk3'] + doc['chunk4'])
+                doc_hash = imagehash.hex_to_hash(self._assemble_hash(doc))
                 certainty = self._confidence(str(hash_candidate), str(doc_hash))
                 self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
                 if certainty >= max_certainty:
                     self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
                     max_certainty = certainty
-                    matching_hash = doc_hash
                     res_doc = doc
-            if res_doc:
-                ret['type'] = res_doc.get('type')
-                ret['confidence'] = max_certainty
-                ret['target'] = res_doc.get('target')
-                ret['meta']['imageId'] = res_doc.get('image')
-                ret['meta']['fingerprint'] = str(matching_hash)
+                    if max_certainty == 1.0:
+                        break
         except Exception as e:
             self._logger.error('Error classifying {} {}'.format(url, e))
-        return ret
+        return self._create_response(res_doc, max_certainty)
 
     def _search(self, hash):
         for doc in self._collection.find({
@@ -65,6 +61,23 @@ class PHash(Classifier):
                 }]
         }):
             yield doc
+
+    def _create_response(self, matching_doc, certainty):
+        ret = PHash.CLASSIFICATION_DATA.copy()
+        if matching_doc:
+            matching_hash = self._assemble_hash(matching_doc)
+            ret['type'] = matching_doc.get('type')
+            ret['confidence'] = certainty
+            ret['target'] = matching_doc.get('target')
+            ret['meta']['imageId'] = matching_doc.get('image')
+            ret['meta']['fingerprint'] = matching_hash
+        return ret
+
+    def _assemble_hash(self, doc):
+        doc_hash = ''
+        if doc:
+            doc_hash = doc.get('chunk1') + doc.get('chunk2') + doc.get('chunk3') + doc.get('chunk4')
+        return doc_hash
 
     def _validate(self, url):
         if not self._urihelper.resolves(url, timeout=3):
