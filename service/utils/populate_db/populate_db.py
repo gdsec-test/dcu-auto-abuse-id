@@ -7,7 +7,8 @@ import imagehash
 import io
 import os
 import sys
-import logging
+import yaml
+import logging.config
 
 
 # Utility to search production mongodb INCIDENTS collection for specific targets, as defined in top_phish
@@ -29,16 +30,27 @@ import logging
 env = os.getenv('sysenv', 'dev')
 config = config_by_name[env]()
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    filename='io_error.log',
-                    filemode='w')
-logger_io = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    filename='unknown_error.log',
-                    filemode='w')
-logger_unk = logging.getLogger(__name__)
+# Walk the tree up to find where the logging yaml file is
+path = None
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+while path is None:
+    file_path = cur_dir + '/logging.yml'
+    if os.path.isfile(file_path):
+        path = file_path
+        break
+    cur_dir = os.path.dirname(cur_dir)
+
+# Set up the logging handle
+value = os.getenv('LOG_CFG', None)
+if value:
+    path = value
+if os.path.exists(path):
+    with open(path, 'rt') as f:
+        lconfig = yaml.safe_load(f.read())
+    logging.config.dictConfig(lconfig)
+else:
+    logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     sys.exit("You'll need to uncomment this line if you want to run.  DO NOT OVERWRITE EXISTING DB RECORDS!!!")
@@ -113,8 +125,8 @@ if __name__ == '__main__':
                         except pymongo.errors.DuplicateKeyError as e:
                             pass
                         except IOError as e:
-                            logger_io.error(e.message)
+                            logger.error(e.message)
                             pass
                         except Exception as e:
-                            logger_unk.error(e)
+                            logger.error(e)
                             pass

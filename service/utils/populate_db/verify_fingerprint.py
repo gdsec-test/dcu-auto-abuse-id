@@ -1,5 +1,6 @@
 import os
-import logging
+import yaml
+import logging.config
 import pymongo.errors
 
 from flask import Flask
@@ -19,17 +20,33 @@ env = os.getenv('sysenv', 'dev')
 user = os.getenv('user', 'unknownUser')
 config = config_by_name[env]()
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    filename='verify_error.log',
-                    filemode='w')
+# Walk the tree up to find where the logging yaml file is
+path = None
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+while path is None:
+    file_path = cur_dir + '/logging.yml'
+    if os.path.isfile(file_path):
+        path = file_path
+        break
+    cur_dir = os.path.dirname(cur_dir)
+
+# Set up the logging handle
+value = os.getenv('LOG_CFG', None)
+if value:
+    path = value
+if os.path.exists(path):
+    with open(path, 'rt') as f:
+        lconfig = yaml.safe_load(f.read())
+    logging.config.dictConfig(lconfig)
+else:
+    logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 TABLE_ROW = '<tr><td>{type}</td><td><a href="https://phishstory.int.godaddy.com/getimage/{image}">{target}</a></td>' \
-            '<td><a href="/{page}/yes/{record_id}">YES</a>&nbsp;&nbsp;&nbsp;</td><td>' \
-            '<a href="/{page}/no/{record_id}">NO</a>&nbsp;&nbsp;&nbsp;</td><td>' \
-            '<a href="/{page}/inconclusive/{record_id}">INCONCLUSIVE</a></td></tr><br>' \
+            '<td><a href="/{page}/yes/{image}">YES</a>&nbsp;&nbsp;&nbsp;</td><td>' \
+            '<a href="/{page}/no/{image}">NO</a>&nbsp;&nbsp;&nbsp;</td><td>' \
+            '<a href="/{page}/inconclusive/{image}">INCONCLUSIVE</a></td></tr><br>' \
             '<iframe height=500 width=1200 src="https://phishstory.int.godaddy.com/getimage/{image}"></iframe>'
 
 # DCU DEVELOPMENT db (read/write)
@@ -77,6 +94,15 @@ def get_records():
     return False
 
 
+@app.route("/favicon.ico")
+def favicon():
+    '''
+    For the annoying calls to: "GET /favicon.ico HTTP/1.1"
+    :return empty string:
+    '''
+    return ''
+
+
 @app.route("/")
 def get_one_record(action_taken=None):
     '''
@@ -84,18 +110,20 @@ def get_one_record(action_taken=None):
     :param action_taken:
     :return: html string
     '''
-    records = get_records()
-    if records and records.count() > 0:
-        html = get_header(action_taken)
-        for doc in records:
+    try:
+        doc = get_records().next()
+        if doc:
+            html = get_header(action_taken)
             html += str(TABLE_ROW.format(target=doc.get('target'),
                                          type=doc.get('type'),
-                                         image=doc.get('image'),
-                                         record_id=doc.get('_id'),
+                                         image=doc.get('imageId'),
                                          page='verify'))
-        html += get_footer()
-        return html
-    return review('No new images to verify')
+            html += get_footer()
+            return html
+    except StopIteration:
+        global records_to_review
+        records_to_review = None
+        return review('No new images to verify')
 
 
 @app.route("/<string:action_taken>")
@@ -106,20 +134,19 @@ def get_next_record(action_taken):
     :param action_taken:
     :return:
     '''
-    if action_taken != u'favicon.ico':
-        return get_one_record(action_taken)
+    return get_one_record(action_taken)
 
 
-@app.route("/verify/<string:yes_no_maybeso>/<string:record_id>/")
-def verify(yes_no_maybeso, record_id):
+@app.route("/verify/<string:yes_no_maybeso>/<string:image_id>/")
+def verify(yes_no_maybeso, image_id):
     '''
     Endpoint that updates new fingerprint record with a visual validation status (yes/no/inconclusive)
     :param yes_no_maybeso:
-    :param record_id:
+    :param image_id:
     :return: html string
     '''
-    action_taken = 'You chose {} for {}'.format(yes_no_maybeso, record_id)
-    local_collection.update({'_id': ObjectId(record_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
+    action_taken = 'You chose {} for imageId {}'.format(yes_no_maybeso, image_id)
+    local_collection.update({'imageId': ObjectId(image_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
     return get_next_record(action_taken)
 
 
@@ -147,16 +174,16 @@ def get_records_to_review(yes_no_maybeso):
     return records_to_review
 
 
-@app.route("/review/<string:yes_no_maybeso>/<string:record_id>/")
-def review_change_verify(yes_no_maybeso, record_id):
+@app.route("/review/<string:yes_no_maybeso>/<string:image_id>/")
+def review_change_verify(yes_no_maybeso, image_id):
     '''
     Endpoint that updates existing fingerprint record with a visual validation status (yes/no/inconclusive)
     :param yes_no_maybeso:
-    :param record_id:
+    :param image_id:
     :return: html string
     '''
-    action_taken = 'You chose {} for {}'.format(yes_no_maybeso, record_id)
-    local_collection.update({'_id': ObjectId(record_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
+    action_taken = 'You chose {} for {}'.format(yes_no_maybeso, image_id)
+    local_collection.update({'imageId': ObjectId(image_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
     return review_records(yes_no_maybeso, action_taken)
 
 
@@ -194,7 +221,6 @@ def review_records(yes_no_maybeso, action_taken=None):
             html += str(TABLE_ROW.format(target=doc.get('target'),
                                          type=doc.get('type'),
                                          image=doc.get('imageId'),
-                                         record_id=doc.get('_id'),
                                          page='review'))
             html += '<td>&nbsp;&nbsp;&nbsp;<a href="/review/{}">NEXT</a></td>'.format(yes_no_maybeso)
             html += '<td>&nbsp;&nbsp;&nbsp;<a href="/review">RESET WEBPAGE</a></td>'
