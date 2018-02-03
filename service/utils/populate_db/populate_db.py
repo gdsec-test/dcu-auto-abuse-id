@@ -122,7 +122,5 @@ if __name__ == '__main__':
                             pass
                         except IOError as e:
                             logger.error(e.message)
-                            pass
                         except Exception as e:
                             logger.error(e)
-                            pass
