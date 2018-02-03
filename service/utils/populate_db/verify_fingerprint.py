@@ -227,9 +227,9 @@ def review_records(yes_no_maybeso, action_taken=None):
             html += get_footer()
             return html
     except StopIteration:
-        global records_to_review
-        records_to_review = None
-        return review()
+        # we've run out of records to iterate through...
+        pass
+    return review()
 
 
 if __name__ == '__main__':
