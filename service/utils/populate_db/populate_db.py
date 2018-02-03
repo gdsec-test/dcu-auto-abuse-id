@@ -109,15 +109,11 @@ if __name__ == '__main__':
                         try:
                             hash_phish = imagehash.phash(
                                 Image.open(io.BytesIO(fs_read.read())))
-                            chunk1 = str(hash_phish)[0:4]
-                            chunk2 = str(hash_phish)[4:8]
-                            chunk3 = str(hash_phish)[8:12]
-                            chunk4 = str(hash_phish)[12:16]
                             local_collection.insert_one({
-                                'chunk1': chunk1,
-                                'chunk2': chunk2,
-                                'chunk3': chunk3,
-                                'chunk4': chunk4,
+                                'chunk1': str(hash_phish)[0:4],
+                                'chunk2': str(hash_phish)[4:8],
+                                'chunk3': str(hash_phish)[8:12],
+                                'chunk4': str(hash_phish)[12:16],
                                 'target': top_target,
                                 'type': abuse_type,
                                 'image': doc.get('screenshot_id')
