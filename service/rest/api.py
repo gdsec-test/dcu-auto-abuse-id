@@ -1,11 +1,16 @@
 import os
+import logging
 
-from flask import Flask, request
-from flask_restplus import Namespace, Api, Resource
+from flask import request
+from settings import config_by_name
+from flask_restplus import Namespace, Resource
+from service.classifiers.phash import PHash
 
 
 api = Namespace('validator', description='Validator operations')
-
+env = os.getenv('sysenv', 'dev')
+config = config_by_name[env]()
+phash = PHash(config)
 master_db = {}
 
 
@@ -17,6 +22,8 @@ class IntakeURI(Resource):
      abuse fingerprints
     '''
     _archive = master_db
+    _phash = phash
+    _logger = logging.getLogger(__name__)
 
     def get(self):
         '''
@@ -31,6 +38,10 @@ class IntakeURI(Resource):
         :return:
         '''
         uri = request.form['uri']
+
+        classification_dict = self._phash.classify(uri)
+        self._logger.info('{}'.format(classification_dict))
+
         target = request.form.get('verified', False)
         message = '{} will be added to known {} phishing'.format(uri, target)
         if not target:
@@ -38,7 +49,7 @@ class IntakeURI(Resource):
             self._archive[uri] = (self._archive[uri] + 1) if self._archive.get(
                 uri, None) else 1
 
-        return {'submit_uri': message}
+        return classification_dict
 
 
 @api.route('/status_uri')
