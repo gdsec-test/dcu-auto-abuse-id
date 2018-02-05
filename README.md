@@ -55,6 +55,7 @@ pip install -r requirements.txt
 ## Running Locally
  If you would like to run auto_abuse_id locally you will need to specify the following environment variables
  1. `sysenv` (dev, ote, prod)
+ 2. `phantomjs` executable needs to be in PATH.
  
 ### usage:
-`curl -XPUT http://localhost:5000/submit_uri -d 'uri=https://www.impcat.com/'`
+`curl -XPUT http://localhost:5000/validator/submit_uri -d 'uri=https://www.impcat.com/'`
