@@ -13,6 +13,7 @@ class URIHelper:
         """
             Returns a boolean indicating whether the site resolves or not
             :param url:
+            :param timeout:
             :return:
             NOTE: If we are using auth, requests library will not resend auth on a redirect (will result in a 401),
             so we need to manually check for one and re-issue the get with the redirected url and the auth credentials
@@ -34,6 +35,7 @@ class URIHelper:
         """
         Returns a tuple consisting of screenshot, and sourcecode for the url in question
         :param url:
+        :param timeout:
         :return:
         """
         data = (None, None)
