@@ -26,8 +26,6 @@ class PHash(Classifier):
         :param settings:
         """
         self._logger = logging.getLogger(__name__)
-        # self._client = pymongo.MongoClient(
-        #     host=settings.DB_HOST, port=settings.DB_PORT, connect=False)
         self._client = pymongo.MongoClient(settings.DB_URL, connect=False)
         self._db = self._client[settings.DB]
         self._collection = self._db[settings.COLLECTION]
@@ -70,7 +68,7 @@ class PHash(Classifier):
         :param hash_val:
         :return:
         """
-        for doc in self._collection.find({
+        for doc in self._collection.find({'valid': 'yes',
                 '$or': [{
                     'chunk1': str(hash_val)[0:4]
                 }, {
