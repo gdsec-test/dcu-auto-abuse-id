@@ -9,7 +9,7 @@ def create_app():
         app,
         version='1.0',
         title='DCU Classification API',
-        description='Classifies URLs based on their detected abuse type',
+        description='Classifies URLs/Images based on their detected abuse type',
         validate=True,
         doc='/doc',
     )

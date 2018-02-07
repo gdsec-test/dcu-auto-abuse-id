@@ -1,67 +1,56 @@
 import os
 import logging
 
-from flask import request
 from settings import config_by_name
-from flask_restplus import Namespace, Resource
+from flask_restplus import Namespace, Resource, fields, inputs, reqparse
 from service.classifiers.phash import PHash
 
+_logger = logging.getLogger(__name__)
+api = Namespace('classify',
+                title='Automated Abuse Classifier API',
+                description='Abuse classification operations',
+                validate=True,
+                doc='/doc')
 
-api = Namespace('validator', description='Validator operations')
 env = os.getenv('sysenv', 'dev')
 config = config_by_name[env]()
 phash = PHash(config)
-master_db = {}
+
+parser = reqparse.RequestParser(bundle_errors=True)
+parser.add_argument('uri',
+                    required=True,
+                    type=inputs.url,
+                    help='{error_msg}',
+                    location='json')
+
+fields_to_return = api.model('response', {
+    'target': fields.String(help='The Target of the abuse'),
+    'uri': fields.String(help='The URI to classify'),
+    'type': fields.String(help='The abuse type category'),
+    'confidence': fields.String(help='A confidence score of 1 indicates an exact match, while 0 indicates no match'),
+    'method': fields.String(help='The method used to obtain the confidence score.  Currently only: pHash'),
+    'meta': fields.String(help='Additional metadata')
+})
 
 
 @api.route('/submit_uri')
 class IntakeURI(Resource):
-    """
-    Class to handle intake of URIs reported as possibly containing abuse, which will then
-     be parsed and evaluated to automatically determine how closely they match existing
-     abuse fingerprints
-    """
-    _logger = logging.getLogger(__name__)
 
-    def get(self):
-        """
-        Displays all URIs submitted along with the number of times submitted
-        :return:
-        """
-        return {'Submitted URIs': master_db}
-
+    @api.doc('classify_uri', parser=parser)
+    @api.marshal_with(fields_to_return, code=201)
+    @api.response(201, 'Success', model=fields_to_return)
+    @api.response(400, 'Validation Error')
     def put(self):
         """
-        Adds URIs submitted to the _archive dict, keeping count of number of times submitted
-        :return:
+        Submit URI for auto detection and classification
+        Endpoint to handle intake of URIs reported as possibly containing abuse, which will then
+        be parsed and evaluated to automatically determine how closely they match existing
+        abuse fingerprints
         """
-        uri = request.form['uri']
+        args = parser.parse_args()
+        uri = args.get('uri', False)
 
         classification_dict = phash.classify(uri)
-        self._logger.info('{}'.format(classification_dict))
+        _logger.info('{}'.format(classification_dict))
 
-        target = request.form.get('verified', False)
-        if target and not classification_dict.get('target', False):
-            classification_dict['target'] = 'reported:{}'.format(target)
-
-        master_db[uri] = (master_db[uri] + 1) if master_db.get(uri, None) else 1
-
-        return classification_dict
-
-
-@api.route('/status_uri')
-class StatusURI(Resource):
-    """
-    Class to provide status on a specific URI which has already been submitted to the API
-    """
-
-    def put(self):
-        """
-        Displays the status of the URI, if previously submitted
-        :return:
-        """
-        uri = request.form['uri']
-        message = '{} has not been submitted'.format(uri)
-        if master_db.get(uri, False):
-            message = '{} has already been classified'.format(uri)
-        return {'status': message}
+        return classification_dict, 201
