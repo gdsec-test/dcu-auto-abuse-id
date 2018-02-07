@@ -1,27 +1,28 @@
 import os
 import logging
-
 from settings import config_by_name
+from flask import request
 from flask_restplus import Namespace, Resource, fields, inputs, reqparse
+from custom_fields import Uri
 from service.classifiers.phash import PHash
+from helpers import validate_payload
 
 _logger = logging.getLogger(__name__)
 api = Namespace('classify',
                 title='Automated Abuse Classifier API',
                 description='Abuse classification operations',
-                validate=True,
                 doc='/doc')
 
 env = os.getenv('sysenv', 'dev')
 config = config_by_name[env]()
 phash = PHash(config)
 
-parser = reqparse.RequestParser(bundle_errors=True)
-parser.add_argument('uri',
-                    required=True,
-                    type=inputs.url,
-                    help='{error_msg}',
-                    location='json')
+uri_input = api.model(
+    'uri', {
+        'uri': Uri(required=True, description='URI to classify')
+
+    }
+)
 
 fields_to_return = api.model('response', {
     'target': fields.String(help='The Target of the abuse'),
@@ -36,7 +37,7 @@ fields_to_return = api.model('response', {
 @api.route('/submit_uri')
 class IntakeURI(Resource):
 
-    @api.doc('classify_uri', parser=parser)
+    @api.expect(uri_input)
     @api.marshal_with(fields_to_return, code=201)
     @api.response(201, 'Success', model=fields_to_return)
     @api.response(400, 'Validation Error')
@@ -47,10 +48,9 @@ class IntakeURI(Resource):
         be parsed and evaluated to automatically determine how closely they match existing
         abuse fingerprints
         """
-        args = parser.parse_args()
-        uri = args.get('uri', False)
-
-        classification_dict = phash.classify(uri)
+        payload = request.json
+        validate_payload(payload, uri_input)
+        classification_dict = phash.classify(payload.get('uri'))
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 201
