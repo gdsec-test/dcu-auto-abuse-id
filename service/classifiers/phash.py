@@ -2,7 +2,6 @@ import logging
 import pymongo
 import imagehash
 import io
-import copy
 
 from PIL import Image
 from service.utils.urihelper import URIHelper
@@ -10,15 +9,6 @@ from interface import Classifier
 
 
 class PHash(Classifier):
-
-    CLASSIFICATION_DATA = dict(
-        uri=None,
-        type='UNKNOWN',
-        confidence=0.0,
-        target=None,
-        method='pHash',
-        meta=dict()
-    )
 
     def __init__(self, settings):
         """
@@ -40,7 +30,7 @@ class PHash(Classifier):
         """
         valid, screenshot = self._validate(url)
         if not valid:
-            ret_dict = copy.deepcopy(PHash.CLASSIFICATION_DATA)
+            ret_dict = PHash._get_response_dict()
             ret_dict['uri'] = url
             return ret_dict
         hash_candidate = imagehash.phash(Image.open(io.BytesIO(screenshot)))
@@ -69,16 +59,16 @@ class PHash(Classifier):
         :return:
         """
         for doc in self._collection.find({'valid': 'yes',
-                '$or': [{
-                    'chunk1': str(hash_val)[0:4]
-                }, {
-                    'chunk2': str(hash_val)[4:8]
-                }, {
-                    'chunk3': str(hash_val)[8:12]
-                }, {
-                    'chunk4': str(hash_val)[12:16]
-                }]
-        }):
+                                          '$or': [{
+                                              'chunk1': str(hash_val)[0:4]
+                                          }, {
+                                              'chunk2': str(hash_val)[4:8]
+                                          }, {
+                                              'chunk3': str(hash_val)[8:12]
+                                          }, {
+                                              'chunk4': str(hash_val)[12:16]
+                                          }]
+                                          }):
             yield doc
 
     @staticmethod
@@ -89,7 +79,7 @@ class PHash(Classifier):
         :param certainty:
         :return dictionary:
         """
-        ret = copy.deepcopy(PHash.CLASSIFICATION_DATA)
+        ret = PHash._get_response_dict()
         ret['uri'] = url
         if matching_doc:
             matching_hash = PHash._assemble_hash(matching_doc)
@@ -148,3 +138,13 @@ class PHash(Classifier):
         :return:
         """
         return bin(int(hash1, 16) ^ int(hash2, 16)).count('1')
+
+    @staticmethod
+    def _get_response_dict():
+        return dict(
+            uri=None,
+            type='UNKNOWN',
+            confidence=0.0,
+            target=None,
+            method='pHash',
+            meta=dict())
