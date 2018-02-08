@@ -2,6 +2,7 @@ import logging
 import pymongo
 import imagehash
 import io
+
 from PIL import Image
 from service.utils.urihelper import URIHelper
 from interface import Classifier
@@ -9,77 +10,104 @@ from interface import Classifier
 
 class PHash(Classifier):
 
-    CLASSIFICATION_DATA = dict(
-        uri=None,
-        type='UNKNOWN',
-        confidence=0.0,
-        target=None,
-        method='pHash',
-        meta=dict()
-    )
-
     def __init__(self, settings):
+        """
+        Constructor
+        :param settings:
+        """
         self._logger = logging.getLogger(__name__)
-        self._client = pymongo.MongoClient(
-            host=settings.DB_HOST, port=settings.DB_PORT, connect=False)
+        self._client = pymongo.MongoClient(settings.DB_URL, connect=False)
         self._db = self._client[settings.DB]
         self._collection = self._db[settings.COLLECTION]
         self._urihelper = URIHelper()
 
     def classify(self, url, confidence=0.75):
+        """
+        Intake method to classify a provided url with an optional confidence
+        :param url:
+        :param confidence:
+        :return:
+        """
         valid, screenshot = self._validate(url)
         if not valid:
-            return PHash.CLASSIFICATION_DATA
+            ret_dict = PHash._get_response_dict()
+            ret_dict['uri'] = url
+            return ret_dict
         hash_candidate = imagehash.phash(Image.open(io.BytesIO(screenshot)))
         res_doc = None
         max_certainty = confidence
         try:
             for doc in self._search(hash_candidate):
-                doc_hash = imagehash.hex_to_hash(self._assemble_hash(doc))
-                certainty = self._confidence(str(hash_candidate), str(doc_hash))
+                doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
+                certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
                 self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
                 if certainty >= max_certainty:
-                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
+                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'),
+                                                                                              certainty))
                     max_certainty = certainty
                     res_doc = doc
                     if max_certainty == 1.0:
                         break
         except Exception as e:
             self._logger.error('Error classifying {} {}'.format(url, e))
-        return self._create_response(res_doc, max_certainty)
+        return PHash._create_response(url, res_doc, max_certainty)
 
-    def _search(self, hash):
-        for doc in self._collection.find({
-                '$or': [{
-                    'chunk1': str(hash)[0:4]
-                }, {
-                    'chunk2': str(hash)[4:8]
-                }, {
-                    'chunk3': str(hash)[8:12]
-                }, {
-                    'chunk4': str(hash)[12:16]
-                }]
-        }):
+    def _search(self, hash_val):
+        """
+        Pymongo search clause to find a match based on extracted 16bit chunks
+        :param hash_val:
+        :return:
+        """
+        for doc in self._collection.find({'valid': 'yes',
+                                          '$or': [{
+                                              'chunk1': str(hash_val)[0:4]
+                                          }, {
+                                              'chunk2': str(hash_val)[4:8]
+                                          }, {
+                                              'chunk3': str(hash_val)[8:12]
+                                          }, {
+                                              'chunk4': str(hash_val)[12:16]
+                                          }]
+                                          }):
             yield doc
 
-    def _create_response(self, matching_doc, certainty):
-        ret = PHash.CLASSIFICATION_DATA.copy()
+    @staticmethod
+    def _create_response(url, matching_doc, certainty):
+        """
+        Assembles the response dictionary returned to caller
+        :param matching_doc:
+        :param certainty:
+        :return dictionary:
+        """
+        ret = PHash._get_response_dict()
+        ret['uri'] = url
         if matching_doc:
-            matching_hash = self._assemble_hash(matching_doc)
+            matching_hash = PHash._assemble_hash(matching_doc)
             ret['type'] = matching_doc.get('type')
             ret['confidence'] = certainty
             ret['target'] = matching_doc.get('target')
-            ret['meta']['imageId'] = matching_doc.get('image')
+            ret['meta']['imageId'] = str(matching_doc.get('imageId'))
             ret['meta']['fingerprint'] = matching_hash
         return ret
 
-    def _assemble_hash(self, doc):
+    @staticmethod
+    def _assemble_hash(doc):
+        """
+        Reassembles all of the separate chunks back into the original hash but as a string
+        :param doc:
+        :return string:
+        """
         doc_hash = ''
         if doc:
             doc_hash = doc.get('chunk1') + doc.get('chunk2') + doc.get('chunk3') + doc.get('chunk4')
         return doc_hash
 
     def _validate(self, url):
+        """
+        Attempts to extract and return a screenshot of a provided url
+        :param url:
+        :return:
+        """
         if not self._urihelper.resolves(url, timeout=3):
             self._logger.error('URL:{} does not resolve'.format(url))
             return (False, None)
@@ -89,16 +117,34 @@ class PHash(Classifier):
             return (False, None)
         return (True, screenshot)
 
-    def _confidence(self, hash1, hash2):
-        '''
+    @staticmethod
+    def _confidence(hash1, hash2):
+        """
         Calculate the percentage of like bits by subtracting the number
         of positions that differ from the total number of bits
-        '''
-        return 1 - (self._phash_distance(hash1, hash2) / 64.0)
+        :param hash1:
+        :param hash2:
+        :return:
+        """
+        return 1 - (PHash._phash_distance(hash1, hash2) / 64.0)
 
-    def _phash_distance(self, hash1, hash2):
-        '''
+    @staticmethod
+    def _phash_distance(hash1, hash2):
+        """
         Count the number of bit positions that differ between the two
-        hash's
-        '''
+        hashes
+        :param hash1:
+        :param hash2:
+        :return:
+        """
         return bin(int(hash1, 16) ^ int(hash2, 16)).count('1')
+
+    @staticmethod
+    def _get_response_dict():
+        return dict(
+            uri=None,
+            type='UNKNOWN',
+            confidence=0.0,
+            target=None,
+            method='pHash',
+            meta=dict())

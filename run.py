@@ -1,11 +1,9 @@
 import os
-import logging
 import logging.config
 import yaml
 from service.rest import create_app
 
-env = os.getenv('sysenv', 'dev')
-app = create_app(env)
+app = create_app()
 
 if __name__ == '__main__':
     path = os.path.dirname(os.path.abspath(__file__)) + '/' + 'logging.yml'

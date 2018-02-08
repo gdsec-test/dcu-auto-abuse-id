@@ -50,6 +50,11 @@ pip install -r requirements.txt
  DMV is built utilizing the following key technologies
  1. BlindAl
  2. dcdatabase
+ 
+##3rd Party Installations
+ In order to extract screenshots, you'll need to instal `phantomjs`.  Refer to instructions at: http://phantomjs.org/
+
+ Once installed, the `phantomjs` binary will need to be accessible from a directory in your `PATH` environment variable.
 
 
 ## Running Locally
@@ -57,4 +62,4 @@ pip install -r requirements.txt
  1. `sysenv` (dev, ote, prod)
  
 ### usage:
-`curl -XPUT http://localhost:5000/submit_uri -d 'uri=https://www.impcat.com/'`
+`curl -XPUT -H "Content-Type: application/json" http://localhost:5000/classify/submit_uri -d '{"uri": "https://godaddy.com"}'`

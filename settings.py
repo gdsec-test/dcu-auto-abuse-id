@@ -7,6 +7,7 @@ from encryption_helper import PasswordDecrypter
 class AppConfig(object):
     DB_URL = 'localhost'
     DB = 'test'
+    DB_PORT = 27017
     DB_USER = 'dbuser'
     DB_HOST = 'localhost'
     COLLECTION = 'fingerprints'
