@@ -1,4 +1,5 @@
 import re
+import logging
 from flask_restplus.fields import Raw
 
 URI_REGEX = re.compile(r'(http|https|ftp)://\S+\.\S+')
@@ -14,6 +15,7 @@ class CustomField(Raw):
         super(CustomField, self).__init__(**kwargs)
         # custom params
         self.positive = kwargs.get('positive', True)
+        self._logger = logging.getLogger(__name__)
 
     def format(self, value):
         """
@@ -21,8 +23,8 @@ class CustomField(Raw):
         works only for GET requests
         """
         if not self.validate(value):
-            print 'Validation of field with value \"%s\" (%s) failed' % (
-                value, str(self.__class__.__name__))
+            self._logger.error('Validation of field with value \"%s\" (%s) failed' % (
+                value, str(self.__class__.__name__)))
             # raise MarshallingError
             # disabling for development purposes as the server crashes when
             # exception is raised. can be enabled when the project is mature
