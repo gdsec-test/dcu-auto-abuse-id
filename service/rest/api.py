@@ -40,7 +40,7 @@ fields_to_return = api.model('response', {
 class IntakeURI(Resource):
 
     @api.expect(uri_input)
-    @api.marshal_with(fields_to_return, code=201)
+    @api.marshal_with(fields_to_return, code=200)
     @api.response(200, 'Success', model=fields_to_return)
     @api.response(400, 'Validation Error')
     def post(self):
@@ -66,8 +66,12 @@ class AddNewImage(Resource):
     @api.response(400, 'Validation Error')
     def put(self):
         payload = request.json
-        current_app.config.get('phash').add_classification(
+        phash = current_app.config.get('phash')
+        success, reason = phash.add_classification(
             payload.get('image_id'),
             payload.get('type'),
             payload.get('target'))
-        return '', 201
+        if success:
+            return '', 201
+        else:
+            return reason, 500

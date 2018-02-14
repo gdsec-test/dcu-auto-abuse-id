@@ -31,23 +31,23 @@ class PHash(Classifier):
             ret_dict = PHash._get_response_dict()
             ret_dict['uri'] = url
             return ret_dict
-        hash_candidate = imagehash.phash(Image.open(io.BytesIO(screenshot)))
+        hash_candidate = self._get_image_hash(io.BytesIO(screenshot))
         res_doc = None
         max_certainty = confidence
-        try:
-            for doc in self._search(hash_candidate):
-                doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
-                certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
-                self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
-                if certainty >= max_certainty:
-                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'),
-                                                                                              certainty))
-                    max_certainty = certainty
-                    res_doc = doc
-                    if max_certainty == 1.0:
-                        break
-        except Exception as e:
-            self._logger.error('Error classifying {} {}'.format(url, e))
+        if hash_candidate:
+            try:
+                for doc in self._search(hash_candidate):
+                    doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
+                    certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
+                    self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
+                    if certainty >= max_certainty:
+                        self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
+                        max_certainty = certainty
+                        res_doc = doc
+                        if max_certainty == 1.0:
+                            break
+            except Exception as e:
+                self._logger.error('Error classifying {} {}'.format(url, e))
         return PHash._create_response(url, res_doc, max_certainty)
 
     def add_classification(self, imageid, abuse_type, target=''):
@@ -58,20 +58,23 @@ class PHash(Classifier):
         :param target: Brand abuse is targeting if applicable
         :return str: Incident id of newly created document else None
         '''
-        _, image = self._mongo.get_file(imageid)
-        if image:
-            image_hash = imagehash.phash(Image.open(io.BytesIO(image)))
-            return self._mongo.add_incident(
-                {
-                    'valid': 'yes',
-                    'type': abuse_type,
-                    'target': target,
-                    'chunk1': str(image_hash)[0:4],
-                    'chunk2': str(image_hash)[4:8],
-                    'chunk3': str(image_hash)[8:12],
-                    'chunk4': str(image_hash)[12:16]
-                }
-            )
+        image = None
+        try:
+            _, image = self._mongo.get_file(imageid)
+        except Exception as e:
+            return False, 'Unable to locate image {}'.format(imageid)
+        image_hash = self._get_image_hash(io.BytesIO(image))
+        return True, self._mongo.add_incident(
+            {
+                'valid': 'yes',
+                'type': abuse_type,
+                'target': target,
+                'chunk1': str(image_hash)[0:4],
+                'chunk2': str(image_hash)[4:8],
+                'chunk3': str(image_hash)[8:12],
+                'chunk4': str(image_hash)[12:16]
+            }
+        ) if image_hash else (False, 'Unable to hash image {}'.format(imageid))
 
     def _search(self, hash_val):
         """
@@ -170,3 +173,15 @@ class PHash(Classifier):
             target=None,
             method='pHash',
             meta=dict())
+
+    def _get_image_hash(self, ifile):
+        '''
+        Fetches a peceptual hash of the give file like object
+        :param ifile: File like object representing an image
+        :return: ImageHash object or None
+        '''
+        try:
+            with Image.open(ifile) as image:
+                return imagehash.phash(image)
+        except Exception as e:
+            self._logger.error('Unable to hash image {}'.format(e))

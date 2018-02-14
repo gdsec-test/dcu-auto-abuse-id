@@ -3,6 +3,7 @@ from flask import url_for
 from mock import Mock
 from flask_testing.utils import TestCase
 import service.rest
+from service.classifiers.phash import PHash
 
 
 class TestRest(TestCase):
@@ -12,9 +13,9 @@ class TestRest(TestCase):
 
     def setUp(self):
         self.client = self.app.test_client()
-        self.client.application.config['phash'] = Mock()
 
     def test_classify_success(self):
+        self.client.application.config['phash'] = Mock()
         data = dict(uri='https://localhost.com')
         response = self.client.post(
             url_for('classify'),
@@ -45,6 +46,7 @@ class TestRest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_add_classification_success(self):
+        self.client.application.config['phash'] = Mock(spec=PHash, add_classification=lambda x, y, z: (True, None))
         data = dict(image_id='someid', type='PHISHING', target='netflix')
         response = self.client.put(
             url_for('add'),
