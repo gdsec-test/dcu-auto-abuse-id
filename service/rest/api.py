@@ -1,6 +1,6 @@
 import logging
 from flask import request, current_app
-from flask_restplus import Namespace, Resource, fields
+from flask_restplus import Namespace, Resource, fields, abort
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
 
@@ -20,8 +20,8 @@ uri_input = api.model(
 
 image_data_input = api.model(
     'image_data', {
-        'image_id': fields.String(help='Image ID of existing DCU image', required=True),
-        'target': fields.String(help='The brand being targeted if applicable'),
+        'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
+        'target': fields.String(help='The brand being targeted if applicable', example='Netflix'),
         'type': fields.String(help='Type of abuse associated with image', required=True, enum=['PHISHING', 'MALWARE', 'SPAM'])
     }
 )
@@ -65,6 +65,10 @@ class AddNewImage(Resource):
     @api.response(201, 'Success')
     @api.response(400, 'Validation Error')
     def put(self):
+        '''
+        Add a classification for an existing DCU image
+        Hashes an existing DCU image for use in future classification requests
+        '''
         payload = request.json
         phash = current_app.config.get('phash')
         success, reason = phash.add_classification(
@@ -74,4 +78,5 @@ class AddNewImage(Resource):
         if success:
             return '', 201
         else:
-            return reason, 500
+            abort(500, reason)
+
