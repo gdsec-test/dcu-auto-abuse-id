@@ -1,0 +1,65 @@
+import json
+from flask import url_for
+from mock import Mock
+from flask_testing.utils import TestCase
+import service.rest
+
+
+class TestRest(TestCase):
+
+    def create_app(self):
+        return service.rest.create_app('test')
+
+    def setUp(self):
+        self.client = self.app.test_client()
+        self.client.application.config['phash'] = Mock()
+
+    def test_classify_success(self):
+        data = dict(uri='https://localhost.com')
+        response = self.client.post(
+            url_for('classify'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 200)
+
+    def test_classify_bad_request(self):
+        data = dict()
+        response = self.client.post(
+            url_for('classify'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_classify_bad_uri(self):
+        data = dict(uri='http://localhost')
+        response = self.client.post(
+            url_for('classify'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_add_classification_success(self):
+        data = dict(image_id='someid', type='PHISHING', target='netflix')
+        response = self.client.put(
+            url_for('add'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 201)
+
+    def test_add_classification_bad_request(self):
+        data = dict(image_id='someid')
+        response = self.client.put(
+            url_for('add'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 400)

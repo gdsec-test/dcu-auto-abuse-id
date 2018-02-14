@@ -5,7 +5,7 @@ from encryption_helper import PasswordDecrypter
 
 
 class AppConfig(object):
-    DB_URL = 'localhost'
+    DBURL = 'localhost'
     DB = 'test'
     DB_PORT = 27017
     DB_USER = 'dbuser'
@@ -16,7 +16,7 @@ class AppConfig(object):
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
             else 'password'
-        self.DB_URL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
+        self.DBURL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
 
 
 class ProductionAppConfig(AppConfig):
@@ -47,7 +47,7 @@ class DevelopmentAppConfig(AppConfig):
 
 
 class TestingConfig(AppConfig):
-    DB_URL = 'mongodb://localhost/devphishstory'
+    DBURL = 'mongodb://localhost/devphishstory'
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017

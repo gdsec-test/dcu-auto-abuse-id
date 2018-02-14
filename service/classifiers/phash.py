@@ -1,11 +1,11 @@
 import logging
-import pymongo
-import imagehash
 import io
+import imagehash
 
 from PIL import Image
 from service.utils.urihelper import URIHelper
-from interface import Classifier
+from service.classifiers.interface import Classifier
+from dcdatabase.mongohelper import MongoHelper
 
 
 class PHash(Classifier):
@@ -16,9 +16,11 @@ class PHash(Classifier):
         :param settings:
         """
         self._logger = logging.getLogger(__name__)
-        self._client = pymongo.MongoClient(settings.DB_URL, connect=False)
-        self._db = self._client[settings.DB]
-        self._collection = self._db[settings.COLLECTION]
+        self._mongo = MongoHelper(settings)
+        # self._client = pymongo.MongoClient(settings.DB_URL, connect=False)
+        # self._db = self._client[settings.DB]
+        # self._collection = self._db[settings.COLLECTION]
+        # self._gridfs = gridfs.GridFS(self._db)
         self._urihelper = URIHelper()
 
     def classify(self, url, confidence=0.75):
@@ -52,23 +54,47 @@ class PHash(Classifier):
             self._logger.error('Error classifying {} {}'.format(url, e))
         return PHash._create_response(url, res_doc, max_certainty)
 
+    def add_classification(self, imageid, abuse_type, target=''):
+        '''
+        Hashes a given DCU image and adds it to the fingerprints collection
+        :param imageid: Existing BSON image id
+        :param abuse_type: Type of abuse associated with image
+        :param target: Brand abuse is targeting if applicable
+        :return str: Incident id of newly created document else None
+        '''
+        _, image = self._mongo.get_file(imageid)
+        if image:
+            image_hash = imagehash.phash(Image.open(io.BytesIO(image)))
+            return self._mongo.add_incident(
+                {
+                    'valid': 'yes',
+                    'type': abuse_type,
+                    'target': target,
+                    'chunk1': str(image_hash)[0:4],
+                    'chunk2': str(image_hash)[4:8],
+                    'chunk3': str(image_hash)[8:12],
+                    'chunk4': str(image_hash)[12:16]
+                }
+            )
+
     def _search(self, hash_val):
         """
         Pymongo search clause to find a match based on extracted 16bit chunks
         :param hash_val:
         :return:
         """
-        for doc in self._collection.find({'valid': 'yes',
-                                          '$or': [{
-                                              'chunk1': str(hash_val)[0:4]
-                                          }, {
-                                              'chunk2': str(hash_val)[4:8]
-                                          }, {
-                                              'chunk3': str(hash_val)[8:12]
-                                          }, {
-                                              'chunk4': str(hash_val)[12:16]
-                                          }]
-                                          }):
+        for doc in self._mongo.find_incidents(
+            {'valid': 'yes',
+             '$or': [{
+                'chunk1': str(hash_val)[0:4]
+             }, {
+                'chunk2': str(hash_val)[4:8]
+             }, {
+                'chunk3': str(hash_val)[8:12]
+             }, {
+                'chunk4': str(hash_val)[12:16]
+             }]}
+        ):
             yield doc
 
     @staticmethod

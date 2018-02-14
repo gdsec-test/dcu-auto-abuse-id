@@ -1,26 +1,28 @@
-import os
 import logging
-from settings import config_by_name
-from flask import request
-from flask_restplus import Namespace, Resource, fields, inputs, reqparse
-from custom_fields import Uri
-from service.classifiers.phash import PHash
-from helpers import validate_payload
+from flask import request, current_app
+from flask_restplus import Namespace, Resource, fields
+from service.rest.custom_fields import Uri
+from service.rest.helpers import validate_payload
 
 _logger = logging.getLogger(__name__)
+
 api = Namespace('classify',
                 title='Automated Abuse Classifier API',
                 description='Abuse classification operations',
                 doc='/doc')
 
-env = os.getenv('sysenv', 'dev')
-config = config_by_name[env]()
-phash = PHash(config)
-
 uri_input = api.model(
     'uri', {
         'uri': Uri(required=True, description='URI to classify')
 
+    }
+)
+
+image_data_input = api.model(
+    'image_data', {
+        'image_id': fields.String(help='Image ID of existing DCU image', required=True),
+        'target': fields.String(help='The brand being targeted if applicable'),
+        'type': fields.String(help='Type of abuse associated with image', required=True, enum=['PHISHING', 'MALWARE', 'SPAM'])
     }
 )
 
@@ -34,14 +36,14 @@ fields_to_return = api.model('response', {
 })
 
 
-@api.route('/submit_uri')
+@api.route('/submit_uri', endpoint='classify')
 class IntakeURI(Resource):
 
     @api.expect(uri_input)
     @api.marshal_with(fields_to_return, code=201)
-    @api.response(201, 'Success', model=fields_to_return)
+    @api.response(200, 'Success', model=fields_to_return)
     @api.response(400, 'Validation Error')
-    def put(self):
+    def post(self):
         """
         Submit URI for auto detection and classification
         Endpoint to handle intake of URIs reported as possibly containing abuse, which will then
@@ -50,7 +52,22 @@ class IntakeURI(Resource):
         """
         payload = request.json
         validate_payload(payload, uri_input)
-        classification_dict = phash.classify(payload.get('uri'))
+        classification_dict = current_app.config.get('phash').classify(payload.get('uri'))
         _logger.info('{}'.format(classification_dict))
 
-        return classification_dict, 201
+        return classification_dict, 200
+
+
+@api.route('/add_classification', endpoint='add')
+class AddNewImage(Resource):
+
+    @api.expect(image_data_input)
+    @api.response(201, 'Success')
+    @api.response(400, 'Validation Error')
+    def put(self):
+        payload = request.json
+        current_app.config.get('phash').add_classification(
+            payload.get('image_id'),
+            payload.get('type'),
+            payload.get('target'))
+        return '', 201
