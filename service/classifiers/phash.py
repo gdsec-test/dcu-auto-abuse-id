@@ -17,10 +17,6 @@ class PHash(Classifier):
         """
         self._logger = logging.getLogger(__name__)
         self._mongo = MongoHelper(settings)
-        # self._client = pymongo.MongoClient(settings.DB_URL, connect=False)
-        # self._db = self._client[settings.DB]
-        # self._collection = self._db[settings.COLLECTION]
-        # self._gridfs = gridfs.GridFS(self._db)
         self._urihelper = URIHelper()
 
     def classify(self, url, confidence=0.75):
