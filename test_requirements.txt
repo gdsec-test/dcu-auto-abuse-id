@@ -2,3 +2,4 @@ nose
 mock
 mongomock
 coverage
+flask_testing
