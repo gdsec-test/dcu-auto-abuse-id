@@ -176,7 +176,7 @@ class PHash(Classifier):
 
     def _get_image_hash(self, ifile):
         '''
-        Fetches a peceptual hash of the give file like object
+        Fetches a peceptual hash of the given file like object
         :param ifile: File like object representing an image
         :return: ImageHash object or None
         '''
