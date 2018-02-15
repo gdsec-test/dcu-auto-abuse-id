@@ -24,7 +24,16 @@ class PHash(Classifier):
         Intake method to classify a provided url with an optional confidence
         :param url:
         :param confidence:
-        :return:
+        :return dictionary: Dictionary containing classification data with the
+        following format
+        {
+            "confidence": "float",
+            "target": "string",
+            "uri": "string",
+            "meta": "dict",
+            "type": "string",
+            "method": "string"
+        }
         """
         valid, screenshot = self._validate(url)
         if not valid:
@@ -57,7 +66,17 @@ class PHash(Classifier):
         :param imageid: Existing BSON image id
         :param abuse_type: Type of abuse associated with image
         :param target: Brand abuse is targeting if applicable
-        :return str: Incident id of newly created document else None
+        :return Tuple: Boolean indicating success and a message
+        Example:
+        Invalid image id given
+        (False, 'Unable to locate image xyz')
+        Error trying to hash image
+        (False, 'Unable to hash image xyz')
+        A new document was inserted
+        (True, '')
+        A new document was not created. This can be for several reasons.
+        Most likely a document with the same hash already exists
+        (False, 'No new document created for xyz')
         '''
         image = None
         try:
@@ -65,7 +84,9 @@ class PHash(Classifier):
         except Exception as e:
             return False, 'Unable to locate image {}'.format(imageid)
         image_hash = self._get_image_hash(io.BytesIO(image))
-        return True, self._mongo.add_incident(
+        if not image_hash:
+            return False, 'Unable to hash image {}'.format(imageid)
+        if self._mongo.add_incident(
             {
                 'valid': 'yes',
                 'type': abuse_type,
@@ -75,7 +96,10 @@ class PHash(Classifier):
                 'chunk3': str(image_hash)[8:12],
                 'chunk4': str(image_hash)[12:16]
             }
-        ) if image_hash else (False, 'Unable to hash image {}'.format(imageid))
+        ):
+            return True, ''
+        else:
+            return False, 'No new document created for {}'.format(imageid)
 
     def _search(self, hash_val):
         """
@@ -177,7 +201,7 @@ class PHash(Classifier):
 
     def _get_image_hash(self, ifile):
         '''
-        Fetches a peceptual hash of the given file like object
+        Fetches a perceptual hash of the given file like object
         :param ifile: File like object representing an image
         :return: ImageHash object or None
         '''

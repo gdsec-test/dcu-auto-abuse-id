@@ -30,7 +30,7 @@ fields_to_return = api.model('response', {
     'target': fields.String(help='The Target of the abuse'),
     'uri': fields.String(help='The URI to classify'),
     'type': fields.String(help='The abuse type category'),
-    'confidence': fields.String(help='A confidence score of 1 indicates an exact match, while 0 indicates no match'),
+    'confidence': fields.Float(help='A confidence score of 1 indicates an exact match, while 0 indicates no match'),
     'method': fields.String(help='The method used to obtain the confidence score.  Currently only: pHash'),
     'meta': fields.String(help='Additional metadata')
 })

@@ -80,9 +80,9 @@ class TestPhash:
 
     def test_add_classification_exists(self):
         self._phash._mongo.get_file = Mock(return_value=('blah', return_bytes('tests/images/phash_match.png')[1]))
-        success, iid = self._phash.add_classification('some id', 'PHISHING', 'amazon')
-        assert_true(success)
-        assert_true(iid is None)
+        success, reason = self._phash.add_classification('some id', 'PHISHING', 'amazon')
+        assert_false(success)
+        assert_true(reason is not None)
 
     def test_add_classification_no_existing_image(self):
         success, reason = self._phash.add_classification('non-existant id', 'PHISHING', 'amazon')
