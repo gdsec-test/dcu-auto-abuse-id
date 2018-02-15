@@ -35,19 +35,20 @@ class PHash(Classifier):
         res_doc = None
         max_certainty = confidence
         if hash_candidate:
-            try:
-                for doc in self._search(hash_candidate):
+            for doc in self._search(hash_candidate):
+                try:
                     doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
-                    certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
-                    self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
-                    if certainty >= max_certainty:
-                        self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
-                        max_certainty = certainty
-                        res_doc = doc
-                        if max_certainty == 1.0:
-                            break
-            except Exception as e:
-                self._logger.error('Error classifying {} {}'.format(url, e))
+                except Exception as e:
+                    self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
+                    continue
+                certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
+                self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
+                if certainty >= max_certainty:
+                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
+                    max_certainty = certainty
+                    res_doc = doc
+                    if max_certainty == 1.0:
+                        break
         return PHash._create_response(url, res_doc, max_certainty)
 
     def add_classification(self, imageid, abuse_type, target=''):
