@@ -21,7 +21,7 @@ spec:
         -
           name: "auto-abuse-id"
           imagePullPolicy: "Always"
-          image: "artifactory.secureserver.net:10014/docker-dcu-local/auto-abuse-id:dev"
+          image: "artifactory.secureserver.net:10014/docker-dcu-local/auto_abuse_id:dev"
           livenessProbe:
             httpGet:
               path: /classify/health
