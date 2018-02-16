@@ -36,6 +36,17 @@ fields_to_return = api.model('response', {
 })
 
 
+@api.route('/health', endpoint='health')
+class Health(Resource):
+
+    @api.response(200, 'OK')
+    def get(self):
+        """
+        Health check endpoint
+        """
+        return '', 200
+
+
 @api.route('/submit_uri', endpoint='classify')
 class IntakeURI(Resource):
 
