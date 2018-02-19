@@ -158,10 +158,10 @@ class PHash(Classifier):
         :param url:
         :return:
         """
-        if not self._urihelper.resolves(url, timeout=3):
+        if not self._urihelper.resolves(url, timeout=5):
             self._logger.error('URL:{} does not resolve'.format(url))
             return (False, None)
-        screenshot, _ = self._urihelper.get_site_data(url, timeout=3)
+        screenshot, _ = self._urihelper.get_site_data(url, timeout=5)
         if screenshot is None:
             self._logger.error('Unable to obtain screenshot for {}'.format(url))
             return (False, None)

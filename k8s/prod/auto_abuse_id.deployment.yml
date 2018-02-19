@@ -2,30 +2,30 @@
 apiVersion: "extensions/v1beta1"
 kind: "Deployment"
 metadata:
-  name: "auto_abuse_id"
+  name: "auto-abuse-id"
   namespace: "abuse-api-prod"
   labels:
-    app: "auto_abuse_id"
+    app: "auto-abuse-id"
 spec:
   replicas: 1
   revisionHistoryLimit: 2
   template:
     metadata:
       labels:
-        app: "auto_abuse_id"
+        app: "auto-abuse-id"
     spec:
       imagePullSecrets:
         -
           name: "k8s-artifactory-creds"
       containers:
         -
-          name: "auto_abuse_id"
+          name: "auto-abuse-id"
           imagePullPolicy: "Always"
           image: "artifactory.secureserver.net:10014/docker-dcu-local/auto_abuse_id:prod"
           livenessProbe:
-            exec:
-              command:
-                - '/app/health.sh'
+            httpGet:
+              path: /classify/health
+              port: 5000
             initialDelaySeconds: 10
             periodSeconds: 10
           env:
@@ -38,7 +38,7 @@ spec:
           - name: DB_PASS
             valueFrom:
               secretKeyRef:
-                name: db-auto_abuse_id
+                name: db-auto-abuse-id
                 key: password
 
           volumeMounts:

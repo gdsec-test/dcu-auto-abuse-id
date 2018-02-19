@@ -26,14 +26,45 @@ image_data_input = api.model(
     }
 )
 
-fields_to_return = api.model('response', {
-    'target': fields.String(help='The Target of the abuse'),
-    'uri': fields.String(help='The URI to classify'),
-    'type': fields.String(help='The abuse type category'),
-    'confidence': fields.Float(help='A confidence score of 1 indicates an exact match, while 0 indicates no match'),
-    'method': fields.String(help='The method used to obtain the confidence score.  Currently only: pHash'),
-    'meta': fields.String(help='Additional metadata')
-})
+fields_to_return = api.model(
+    'response', {
+        'target':
+            fields.String(help='The Target of the abuse', example='netflix'),
+        'uri':
+            fields.String(
+                help='The URI classified', example='http://website.com'),
+        'type':
+            fields.String(
+                help='The abuse type category',
+                example='PHISHING',
+                enum=['PHISHING', 'MALWARE', 'SPAM', 'UNKNOWN'],
+                required=True),
+        'confidence':
+            fields.Float(
+                help='A confidence score of 1 indicates an exact match, while 0 indicates no match',
+                example=96.5,
+                required=True
+            ),
+        'method':
+            fields.String(
+                help='The method used to obtain the confidence score.  Currently only: pHash',
+                example='pHash',
+                required=True
+            ),
+        'meta':
+            fields.String(help='Additional metadata in JSON format', example='{}')
+    })
+
+
+@api.route('/health', endpoint='health')
+class Health(Resource):
+
+    @api.response(200, 'OK')
+    def get(self):
+        """
+        Health check endpoint
+        """
+        return '', 200
 
 
 @api.route('/submit_uri', endpoint='classify')
@@ -79,4 +110,3 @@ class AddNewImage(Resource):
             return '', 201
         else:
             abort(500, reason)
-
