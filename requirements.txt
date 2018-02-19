@@ -5,5 +5,5 @@ dcdatabase
 requests==2.13.0
 selenium==3.3.1
 ImageHash==4.0
-pyaml
+pyyaml
 uwsgi==2.0.15
