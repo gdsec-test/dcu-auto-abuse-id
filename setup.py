@@ -20,6 +20,7 @@ setup(
     url='https://github.secureserver.net/ITSecurity/auto_abuse_id',
     # packages=packages,
     packages=find_packages(exclude=['tests', 'tests.*']),
+    include_package_data=True,
     install_requires=reqs,
     tests_require=test_reqs,
     test_suite="nose.collector")

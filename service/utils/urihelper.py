@@ -48,11 +48,11 @@ class URIHelper:
             data = (screenshot, sourcecode)
             return data
         except Exception as e:
-            self._logger.error("Error while taking snapshot and/or source code for {}: {}".format(url, e.message))
+            self._logger.error("Error while taking snapshot and/or source code for {}: {}".format(url, e))
         finally:
             try:
                 browser.service.process.send_signal(signal.SIGTERM)
                 browser.quit()
-            except:
+            except Exception:
                 pass
         return data
