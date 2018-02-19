@@ -8,8 +8,8 @@ _logger = logging.getLogger(__name__)
 
 api = Namespace('classify',
                 title='Automated Abuse Classifier API',
-                description='Abuse classification operations',
-                doc='/doc')
+                description='Abuse classification operations'
+                )
 
 uri_input = api.model(
     'uri', {

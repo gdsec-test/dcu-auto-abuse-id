@@ -1,0 +1,19 @@
+---
+apiVersion: "extensions/v1beta1"
+kind: "Ingress"
+metadata:
+  name: "auto-abuse-id"
+  namespace: "abuse-api-ote"
+spec:
+  tls:
+    - hosts:
+      - "classify.int.ote-godaddy.com"
+      secretName: tls-auto-abuse-id
+  rules:
+  - host: "classify.int.ote-godaddy.com"
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: "auto-abuse-id"
+          servicePort: 5000
