@@ -16,12 +16,10 @@ def create_app(env):
     if value:
         path = value
     if os.path.exists(path):
-        print 'Found yaml config!!!!!!!!!!!'
         with open(path, 'rt') as f:
             lconfig = yaml.safe_load(f.read())
         logging.config.dictConfig(lconfig)
     else:
-        print 'No yaml config!!!!!!'
         logging.basicConfig(level=logging.INFO)
     logging.raiseExceptions = True
     app.config.SWAGGER_UI_JSONEDITOR = True
