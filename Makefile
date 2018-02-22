@@ -2,6 +2,8 @@ REPONAME=infosec-dcu/auto_abuse_id
 BUILDROOT=$(HOME)/dockerbuild/$(REPONAME)
 DOCKERREPO=artifactory.secureserver.net:10014/docker-dcu-local/auto_abuse_id
 DATE=$(shell date)
+COMMIT=
+BUILD_BRANCH=origin/master
 
 # libraries we need to stage for pip to install inside Docker build
 PRIVATE_PIPS=git@github.secureserver.net:ITSecurity/blindAl.git \
@@ -29,8 +31,15 @@ stage: prep
 
 prod: prep
 	@echo "----- building $(REPONAME) prod -----"
-	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/g' $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yml
-	docker build -t $(DOCKERREPO):prod $(BUILDROOT)
+	read -p "About to build production image from $(BUILD_BRANCH) branch. Are you sure? (Y/N): " response ; \
+	if [[ $$response == 'N' || $$response == 'n' ]] ; then exit 1 ; fi
+	if [[ `git status --porcelain | wc -l` -gt 0 ]] ; then echo "You must stash your changes before proceeding" ; exit 1 ; fi
+	git fetch && git checkout $(BUILD_BRANCH)
+	$(eval COMMIT:=$(shell git rev-parse --short HEAD))
+	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/' $(BUILDROOT)/k8s/prod/api.deployment.yml
+	sed -ie 's/REPLACE_WITH_GIT_COMMIT/$(COMMIT)/' $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yml
+	docker build -t $(DOCKERREPO):$(COMMIT) $(BUILDROOT)
+	git checkout -
 
 ote: prep
 	@echo "----- building $(REPONAME) ote -----"
@@ -44,7 +53,7 @@ dev: prep
 
 prod-deploy: prod
 	@echo "----- deploying $(REPONAME) prod -----"
-	docker push $(DOCKERREPO):prod
+	docker push $(DOCKERREPO):$(COMMIT)
 	kubectl --context prod apply -f $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yml --record
 
 ote-deploy: ote
