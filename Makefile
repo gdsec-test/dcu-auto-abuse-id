@@ -36,7 +36,7 @@ prod: prep
 	if [[ `git status --porcelain | wc -l` -gt 0 ]] ; then echo "You must stash your changes before proceeding" ; exit 1 ; fi
 	git fetch && git checkout $(BUILD_BRANCH)
 	$(eval COMMIT:=$(shell git rev-parse --short HEAD))
-	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/' $(BUILDROOT)/k8s/prod/api.deployment.yml
+	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/' $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yml
 	sed -ie 's/REPLACE_WITH_GIT_COMMIT/$(COMMIT)/' $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yml
 	docker build -t $(DOCKERREPO):$(COMMIT) $(BUILDROOT)
 	git checkout -
