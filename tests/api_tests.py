@@ -6,7 +6,7 @@ import service.rest
 from service.classifiers.phash import PHash
 
 
-def resp(candidate):
+def resp(candidate, url=True):
     return dict(
         candidate=None,
         type='UNKNOWN',
@@ -56,7 +56,7 @@ class TestRest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_classify_image_success(self):
-        self.client.application.config['phash'] = Mock(spec=PHash, classify_image_id=resp)
+        self.client.application.config['phash'] = Mock(spec=PHash, classify=resp)
         data = dict(image_id='abc123')
         response = self.client.post(
             url_for('classify_image'),

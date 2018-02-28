@@ -106,8 +106,8 @@ class IntakeImage(Resource):
         Submit existing DCU image ID for auto detection and classification
         """
         payload = request.json
-        classification_dict = current_app.config.get('phash').classify_image_id(
-            payload.get('image_id'))
+        classification_dict = current_app.config.get('phash').classify(
+            payload.get('image_id'), url=False)
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 200

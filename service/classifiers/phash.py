@@ -19,47 +19,38 @@ class PHash(Classifier):
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
 
-    def classify(self, url, confidence=0.75):
+    def classify(self, candidate, url=True, confidence=0.75):
         """
-        Intake method to classify a provided url with an optional confidence
-        :param url:
-        :param confidence:
-        :return dictionary: Dictionary containing classification data with the
-        following format
+        Intake method to classify a provided candidate with an optional confidence
+        :param candidate:
+        :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
+        :param confidence: float indicating the minimum confidence for
+        consideration (Default 75% confidence)
+        :return: dictionary with at the following fields
         {
-            "confidence": "float",
-            "target": "string",
-            "uri": "string",
-            "meta": "dict",
-            "type": "string",
-            "method": "string"
+            "candidate": string,
+            "type": string,
+            "confidence": float,
+            "target": string,
+            "method": string,
+            "meta": {
+                // Additional data (implimentation specific)
+            }
         }
         """
-        valid, screenshot = self._validate(url)
+        return self._classify_image_id(candidate, confidence) if not url else self._classify_uri(candidate, confidence)
+
+    def _classify_uri(self, uri, confidence):
+        valid, screenshot = self._validate(uri)
         if not valid:
             ret_dict = PHash._get_response_dict()
-            ret_dict['uri'] = url
+            ret_dict['candidate'] = uri
             return ret_dict
         hash_candidate = self._get_image_hash(io.BytesIO(screenshot))
         doc, certainty = self._find_match(hash_candidate, confidence)
-        return PHash._create_response(url, doc, certainty)
+        return PHash._create_response(uri, doc, certainty)
 
-    def classify_image_id(self, imageid, confidence=0.75):
-        """
-        Intake method to classify a provided DCU image ID with an optional confidence
-        :param imageid: Existing DCU image to classify
-        :param confidence:
-        :return dictionary: Dictionary containing classification data with the
-        following format
-        {
-            "confidence": "float",
-            "target": "string",
-            "candidate": "string",
-            "meta": "dict",
-            "type": "string",
-            "method": "string"
-        }
-        """
+    def _classify_image_id(self, imageid, confidence=0.75):
         image = None
         try:
             _, image = self._mongo.get_file(imageid)
