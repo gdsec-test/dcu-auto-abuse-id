@@ -14,7 +14,27 @@ class Classifier(object):
         consideration (Default 75% confidence)
         :return: dictionary with at the following fields
         {
-            "uri": string,
+            "candidate": string,
+            "type": string,
+            "confidence": float,
+            "target": string,
+            "method": string,
+            "meta": {
+                // Additional data (implimentation specific)
+            }
+        }
+        """
+
+    @abc.abstractmethod
+    def classify_image_id(self, imageid, confidence=0.75):
+        """
+        Attempt to classify the given DCU image ID
+        :param imageid:
+        :param confidence: float indicating the minimum confidence for
+        consideration (Default 75% confidence)
+        :return: dictionary with at the following fields
+        {
+            "candidate": string,
             "type": string,
             "confidence": float,
             "target": string,

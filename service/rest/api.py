@@ -14,7 +14,12 @@ api = Namespace('classify',
 uri_input = api.model(
     'uri', {
         'uri': Uri(required=True, description='URI to classify')
+    }
+)
 
+image_input = api.model(
+    'image_id', {
+        'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
     }
 )
 
@@ -30,9 +35,9 @@ fields_to_return = api.model(
     'response', {
         'target':
             fields.String(help='The Target of the abuse', example='netflix'),
-        'uri':
+        'candidate':
             fields.String(
-                help='The URI classified', example='http://website.com'),
+                help='The candidate used for classification', example='http://website.com OR abc123'),
         'type':
             fields.String(
                 help='The abuse type category',
@@ -67,7 +72,7 @@ class Health(Resource):
         return '', 200
 
 
-@api.route('/submit_uri', endpoint='classify')
+@api.route('/submit_uri', endpoint='classify_uri')
 class IntakeURI(Resource):
 
     @api.expect(uri_input)
@@ -84,6 +89,25 @@ class IntakeURI(Resource):
         payload = request.json
         validate_payload(payload, uri_input)
         classification_dict = current_app.config.get('phash').classify(payload.get('uri'))
+        _logger.info('{}'.format(classification_dict))
+
+        return classification_dict, 200
+
+
+@api.route('/submit_image', endpoint='classify_image')
+class IntakeImage(Resource):
+
+    @api.expect(image_input)
+    @api.marshal_with(fields_to_return, code=200)
+    @api.response(200, 'Success', model=fields_to_return)
+    @api.response(400, 'Validation Error')
+    def post(self):
+        """
+        Submit existing DCU image ID for auto detection and classification
+        """
+        payload = request.json
+        classification_dict = current_app.config.get('phash').classify_image_id(
+            payload.get('image_id'))
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 200

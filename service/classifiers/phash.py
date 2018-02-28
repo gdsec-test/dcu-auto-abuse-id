@@ -41,6 +41,35 @@ class PHash(Classifier):
             ret_dict['uri'] = url
             return ret_dict
         hash_candidate = self._get_image_hash(io.BytesIO(screenshot))
+        doc, certainty = self._find_match(hash_candidate, confidence)
+        return PHash._create_response(url, doc, certainty)
+
+    def classify_image_id(self, imageid, confidence=0.75):
+        """
+        Intake method to classify a provided DCU image ID with an optional confidence
+        :param imageid: Existing DCU image to classify
+        :param confidence:
+        :return dictionary: Dictionary containing classification data with the
+        following format
+        {
+            "confidence": "float",
+            "target": "string",
+            "candidate": "string",
+            "meta": "dict",
+            "type": "string",
+            "method": "string"
+        }
+        """
+        image = None
+        try:
+            _, image = self._mongo.get_file(imageid)
+        except Exception as e:
+            self._logger.error('Unable to find image {}'.format(imageid))
+        image_hash = self._get_image_hash(io.BytesIO(image))
+        doc, certainty = self._find_match(image_hash, confidence)
+        return PHash._create_response(imageid, doc, certainty)
+
+    def _find_match(self, hash_candidate, confidence):
         res_doc = None
         max_certainty = confidence
         if hash_candidate:
@@ -58,7 +87,7 @@ class PHash(Classifier):
                     res_doc = doc
                     if max_certainty == 1.0:
                         break
-        return PHash._create_response(url, res_doc, max_certainty)
+        return (res_doc, max_certainty) if res_doc else (res_doc, 0.0)
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
@@ -122,7 +151,7 @@ class PHash(Classifier):
             yield doc
 
     @staticmethod
-    def _create_response(url, matching_doc, certainty):
+    def _create_response(candidate, matching_doc, certainty):
         """
         Assembles the response dictionary returned to caller
         :param matching_doc:
@@ -130,7 +159,7 @@ class PHash(Classifier):
         :return dictionary:
         """
         ret = PHash._get_response_dict()
-        ret['uri'] = url
+        ret['candidate'] = candidate
         if matching_doc:
             matching_hash = PHash._assemble_hash(matching_doc)
             ret['type'] = matching_doc.get('type')
@@ -192,7 +221,7 @@ class PHash(Classifier):
     @staticmethod
     def _get_response_dict():
         return dict(
-            uri=None,
+            candidate=None,
             type='UNKNOWN',
             confidence=0.0,
             target=None,
