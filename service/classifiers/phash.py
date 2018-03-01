@@ -34,7 +34,7 @@ class PHash(Classifier):
             "target": string,
             "method": string,
             "meta": {
-                // Additional data (implimentation specific)
+                // Additional data (implementation specific)
             }
         }
         """
@@ -78,7 +78,7 @@ class PHash(Classifier):
                     res_doc = doc
                     if max_certainty == 1.0:
                         break
-        return (res_doc, max_certainty) if res_doc else (res_doc, 0.0)
+        return (res_doc, max_certainty) if res_doc else (None, None)
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
