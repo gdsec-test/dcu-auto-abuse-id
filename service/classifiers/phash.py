@@ -94,7 +94,8 @@ class PHash(Classifier):
                 'chunk1': str(image_hash)[0:4],
                 'chunk2': str(image_hash)[4:8],
                 'chunk3': str(image_hash)[8:12],
-                'chunk4': str(image_hash)[12:16]
+                'chunk4': str(image_hash)[12:16],
+                'count': 1
             }
         ):
             return True, ''
