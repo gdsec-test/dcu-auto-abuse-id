@@ -25,7 +25,8 @@ class TestPhash:
             ('chunk2', pymongo.ASCENDING),
             ('chunk3', pymongo.ASCENDING),
             ('chunk4', pymongo.ASCENDING)], unique=True)
-        self._phash._mongo._collection.insert_many([{
+        self._phash._mongo._collection.insert_many([
+        { # phash of tests/images/phash_match.png
             "target": "amazon",
             "chunk3": "62e2",
             "chunk2": "b023",
