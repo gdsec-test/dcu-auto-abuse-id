@@ -2,7 +2,7 @@ import mongomock
 import pymongo
 import imagehash
 import PIL
-from nose.tools import assert_true, assert_false
+from nose.tools import assert_true, assert_false, assert_equal
 from service.classifiers.phash import PHash
 from settings import TestingConfig
 from mock import patch, Mock
@@ -81,8 +81,14 @@ class TestPhash:
     def test_add_classification_exists(self):
         self._phash._mongo.get_file = Mock(return_value=('blah', return_bytes('tests/images/phash_match.png')[1]))
         success, reason = self._phash.add_classification('some id', 'PHISHING', 'amazon')
-        assert_false(success)
-        assert_true(reason is not None)
+        obj = self._phash._mongo._collection.find_one({
+            'chunk1': 'bf37',
+            'chunk2': 'b023',
+            'chunk3': '62e2',
+            'chunk4': '62e2'
+        })
+        assert_equal(obj.get('count'), 2)
+        assert_true(success)
 
     def test_add_classification_no_existing_image(self):
         success, reason = self._phash.add_classification('non-existant id', 'PHISHING', 'amazon')
