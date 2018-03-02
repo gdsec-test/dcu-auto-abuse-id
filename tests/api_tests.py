@@ -6,6 +6,16 @@ import service.rest
 from service.classifiers.phash import PHash
 
 
+def resp(candidate, url=True):
+    return dict(
+        candidate=None,
+        type='UNKNOWN',
+        confidence=0.0,
+        target=None,
+        method='pHash',
+        meta=dict())
+
+
 class TestRest(TestCase):
 
     def create_app(self):
@@ -14,31 +24,62 @@ class TestRest(TestCase):
     def setUp(self):
         self.client = self.app.test_client()
 
-    def test_classify_success(self):
-        self.client.application.config['phash'] = Mock()
+    def test_classify_uri_success(self):
+        self.client.application.config['phash'] = Mock(spec=PHash, classify=resp)
         data = dict(uri='https://localhost.com')
         response = self.client.post(
-            url_for('classify'),
+            url_for('classify_uri'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 200)
 
-    def test_classify_bad_request(self):
+    def test_classify_bad_uri_request(self):
         data = dict()
         response = self.client.post(
-            url_for('classify'),
+            url_for('classify_uri'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 400)
 
-    def test_classify_bad_uri(self):
+    def test_classify_invalid_uri(self):
         data = dict(uri='http://localhost')
         response = self.client.post(
-            url_for('classify'),
+            url_for('classify_uri'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_classify_image_success(self):
+        self.client.application.config['phash'] = Mock(spec=PHash, classify=resp)
+        data = dict(image_id='abc123')
+        response = self.client.post(
+            url_for('classify_image'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 200)
+
+    def test_classify_bad_image_request(self):
+        data = dict()
+        response = self.client.post(
+            url_for('classify_image'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_classify_invalid_image_id(self):
+        data = dict(image_id=12345)
+        response = self.client.post(
+            url_for('classify_image'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'

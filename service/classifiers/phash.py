@@ -19,28 +19,48 @@ class PHash(Classifier):
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
 
-    def classify(self, url, confidence=0.75):
+    def classify(self, candidate, url=True, confidence=0.75):
         """
-        Intake method to classify a provided url with an optional confidence
-        :param url:
-        :param confidence:
-        :return dictionary: Dictionary containing classification data with the
-        following format
+        Intake method to classify a provided candidate with an optional confidence
+        :param candidate:
+        :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
+        :param confidence: float indicating the minimum confidence for
+        consideration (Default 75% confidence)
+        :return: dictionary with at the following fields
         {
-            "confidence": "float",
-            "target": "string",
-            "uri": "string",
-            "meta": "dict",
-            "type": "string",
-            "method": "string"
+            "candidate": string,
+            "type": string,
+            "confidence": float,
+            "target": string,
+            "method": string,
+            "meta": {
+                // Additional data (implementation specific)
+            }
         }
         """
-        valid, screenshot = self._validate(url)
+        return self._classify_image_id(candidate, confidence) if not url else self._classify_uri(candidate, confidence)
+
+    def _classify_uri(self, uri, confidence):
+        valid, screenshot = self._validate(uri)
         if not valid:
             ret_dict = PHash._get_response_dict()
-            ret_dict['uri'] = url
+            ret_dict['candidate'] = uri
             return ret_dict
         hash_candidate = self._get_image_hash(io.BytesIO(screenshot))
+        doc, certainty = self._find_match(hash_candidate, confidence)
+        return PHash._create_response(uri, doc, certainty)
+
+    def _classify_image_id(self, imageid, confidence=0.75):
+        image = None
+        try:
+            _, image = self._mongo.get_file(imageid)
+        except Exception as e:
+            self._logger.error('Unable to find image {}'.format(imageid))
+        image_hash = self._get_image_hash(io.BytesIO(image))
+        doc, certainty = self._find_match(image_hash, confidence)
+        return PHash._create_response(imageid, doc, certainty)
+
+    def _find_match(self, hash_candidate, confidence):
         res_doc = None
         max_certainty = confidence
         if hash_candidate:
@@ -58,7 +78,7 @@ class PHash(Classifier):
                     res_doc = doc
                     if max_certainty == 1.0:
                         break
-        return PHash._create_response(url, res_doc, max_certainty)
+        return (res_doc, max_certainty) if res_doc else (None, None)
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
@@ -122,7 +142,7 @@ class PHash(Classifier):
             yield doc
 
     @staticmethod
-    def _create_response(url, matching_doc, certainty):
+    def _create_response(candidate, matching_doc, certainty):
         """
         Assembles the response dictionary returned to caller
         :param matching_doc:
@@ -130,7 +150,7 @@ class PHash(Classifier):
         :return dictionary:
         """
         ret = PHash._get_response_dict()
-        ret['uri'] = url
+        ret['candidate'] = candidate
         if matching_doc:
             matching_hash = PHash._assemble_hash(matching_doc)
             ret['type'] = matching_doc.get('type')
@@ -192,7 +212,7 @@ class PHash(Classifier):
     @staticmethod
     def _get_response_dict():
         return dict(
-            uri=None,
+            candidate=None,
             type='UNKNOWN',
             confidence=0.0,
             target=None,

@@ -6,15 +6,16 @@ class Classifier(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def classify(self, url, confidence=0.75):
+    def classify(self, candidate, url=True, confidence=0.75):
         """
-        Attempt to classify the given url
-        :param url:
+        Attempt to classify the given candidate
+        :param candidate:
+        :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
         :param confidence: float indicating the minimum confidence for
         consideration (Default 75% confidence)
         :return: dictionary with at the following fields
         {
-            "uri": string,
+            "candidate": string,
             "type": string,
             "confidence": float,
             "target": string,
