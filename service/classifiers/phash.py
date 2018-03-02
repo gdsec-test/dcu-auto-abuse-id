@@ -99,6 +99,23 @@ class PHash(Classifier):
         ):
             return True, ''
         else:
+            # The most likely reason we get here is that it already exists
+            phash = self._mongo.find_incident(
+                {
+                    'chunk1': str(image_hash)[0:4],
+                    'chunk2': str(image_hash)[4:8],
+                    'chunk3': str(image_hash)[8:12],
+                    'chunk4': str(image_hash)[12:16]
+                }
+            )
+            if phash:
+                result = self._mongo.update_incident(
+                    phash.get('_id'),
+                    { 'count': phash.get('count', 1) + 1 }
+                )
+                if result:
+                    return True, ''
+                return False, 'Unable to update count for {}'.format(imageid)
             return False, 'No new document created for {}'.format(imageid)
 
     def _search(self, hash_val):
