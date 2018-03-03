@@ -86,38 +86,33 @@ class PHash(Classifier):
         image_hash = self._get_image_hash(io.BytesIO(image))
         if not image_hash:
             return False, 'Unable to hash image {}'.format(imageid)
-        if self._mongo.add_incident(
-            {
-                'valid': 'yes',
-                'type': abuse_type,
-                'target': target,
-                'chunk1': str(image_hash)[0:4],
-                'chunk2': str(image_hash)[4:8],
-                'chunk3': str(image_hash)[8:12],
-                'chunk4': str(image_hash)[12:16],
-                'count': 1
-            }
-        ):
-            return True, ''
-        else:
-            # The most likely reason we get here is that it already exists
-            phash = self._mongo.find_incident(
-                {
-                    'chunk1': str(image_hash)[0:4],
-                    'chunk2': str(image_hash)[4:8],
-                    'chunk3': str(image_hash)[8:12],
-                    'chunk4': str(image_hash)[12:16]
-                }
-            )
-            if phash:
-                result = self._mongo.update_incident(
-                    phash.get('_id'),
-                    { 'count': phash.get('count', 1) + 1 }
-                )
-                if result:
-                    return True, ''
-                return False, 'Unable to update count for {}'.format(imageid)
-            return False, 'No new document created for {}'.format(imageid)
+
+        phash = self._mongo.find_incident({
+            'chunk1': str(image_hash)[0:4],
+            'chunk2': str(image_hash)[4:8],
+            'chunk3': str(image_hash)[8:12],
+            'chunk4': str(image_hash)[12:16]
+        })
+        if phash:
+            if self._mongo.update_incident(phash.get('_id'), {'count': phash.get('count', 1) + 1}):
+                return True, ''
+            return False, 'Unable to update count for {}'.format(imageid)
+
+        # If we're here, the keyset doesn't exist yet
+        if self._mongo.add_incident({
+            'valid': 'yes',
+            'type': abuse_type,
+            'target': target,
+            'chunk1': str(image_hash)[0:4],
+            'chunk2': str(image_hash)[4:8],
+            'chunk3': str(image_hash)[8:12],
+            'chunk4': str(image_hash)[12:16],
+            'count': 1
+        }):
+            return True, '' 
+
+        # It didn't exist, but we also couldn't add it? We should never get here
+        return False, 'No new document created for {}'.format(imageid)
 
     def _search(self, hash_val):
         """
