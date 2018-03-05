@@ -6,7 +6,8 @@ from PIL import Image
 from service.utils.urihelper import URIHelper
 from service.classifiers.interface import Classifier
 from dcdatabase.mongohelper import MongoHelper
-
+from pymongo import ReturnDocument
+from bson.objectid import ObjectId
 
 class PHash(Classifier):
 
@@ -99,13 +100,12 @@ class PHash(Classifier):
                 '$setOnInsert': {
                     'valid': 'yes',
                     'type': abuse_type,
-                    'target': target
+                    'target': target,
+                    'imageid': ObjectId(imageid)
                 }
             },
-            {
-                'upsert': True,
-                'returnNewDocument': True
-            }
+            upsert = True,
+            return_document = ReturnDocument.AFTER
         ):
             return True, ''
         return False, 'Unable to add or update DB for {}'.format(imageid)
