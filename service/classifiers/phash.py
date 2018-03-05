@@ -87,32 +87,58 @@ class PHash(Classifier):
         if not image_hash:
             return False, 'Unable to hash image {}'.format(imageid)
 
-        phash = self._mongo.find_incident({
-            'chunk1': str(image_hash)[0:4],
-            'chunk2': str(image_hash)[4:8],
-            'chunk3': str(image_hash)[8:12],
-            'chunk4': str(image_hash)[12:16]
-        })
-        if phash:
-            if self._mongo.update_incident(phash.get('_id'), {'count': phash.get('count', 1) + 1}):
-                return True, ''
-            return False, 'Unable to update count for {}'.format(imageid)
+        if self._mongo._collection.find_one_and_update(
+            {
+                'chunk1': str(image_hash)[0:4],
+                'chunk2': str(image_hash)[4:8],
+                'chunk3': str(image_hash)[8:12],
+                'chunk4': str(image_hash)[12:16]
+            },
+            {
+                '$inc': { 'count': 1 },
+                '$setOnInsert': {
+                    'valid': 'yes',
+                    'type': abuse_type,
+                    'target': target
+                }
+            },
+            {
+                'upsert': True,
+                'returnNewDocument': True
+            }
+        ):
+            return True, ''
+        return False, 'Unable to update count for {}'.format(imageid)
 
-        # If we're here, the keyset doesn't exist yet
-        if self._mongo.add_incident({
-            'valid': 'yes',
-            'type': abuse_type,
-            'target': target,
-            'chunk1': str(image_hash)[0:4],
-            'chunk2': str(image_hash)[4:8],
-            'chunk3': str(image_hash)[8:12],
-            'chunk4': str(image_hash)[12:16],
-            'count': 1
-        }):
-            return True, '' 
+        # phash = self._mongo.find_incident({
+        #     'chunk1': str(image_hash)[0:4],
+        #     'chunk2': str(image_hash)[4:8],
+        #     'chunk3': str(image_hash)[8:12],
+        #     'chunk4': str(image_hash)[12:16]
+        # })
+        # if phash:
+        #     if self._mongo._collection.find_one_and_update(
+        #         {'_id': phash.get('_id')},
+        #         {'$inc': { 'count': 1 }}
+        #     ):
+        #         return True, ''
+        #     return False, 'Unable to update count for {}'.format(imageid)
 
-        # It didn't exist, but we also couldn't add it? We should never get here
-        return False, 'No new document created for {}'.format(imageid)
+        # # If we're here, the keyset doesn't exist yet
+        # if self._mongo.add_incident({
+        #     'valid': 'yes',
+        #     'type': abuse_type,
+        #     'target': target,
+        #     'chunk1': str(image_hash)[0:4],
+        #     'chunk2': str(image_hash)[4:8],
+        #     'chunk3': str(image_hash)[8:12],
+        #     'chunk4': str(image_hash)[12:16],
+        #     'count': 1
+        # }):
+        #     return True, '' 
+
+        # # It didn't exist, but we also couldn't add it? We should never get here
+        # return False, 'No new document created for {}'.format(imageid)
 
     def _search(self, hash_val):
         """

@@ -33,7 +33,8 @@ class TestPhash:
             "chunk1": "bf37",
             "type": "PHISHING",
             "chunk4": "62e2",
-            "valid": "yes"
+            "valid": "yes",
+            "count": 1
         }, {
             "target": "netflix",
             "chunk3": "2f0e",
@@ -41,7 +42,8 @@ class TestPhash:
             "chunk1": "afbf",
             "type": "PHISHING",
             "chunk4": "8585",
-            "valid": "yes"
+            "valid": "yes",
+            "count": 1
         }, {
             "target": "amazon",
             "chunk3": "6ec4",
@@ -49,7 +51,8 @@ class TestPhash:
             "chunk1": "ae7b",
             "type": "PHISHING",
             "chunk4": "e0c0",
-            "valid": "yes"
+            "valid": "yes",
+            "count": 1
         }])
 
     def test_phash_match(self):
@@ -81,15 +84,18 @@ class TestPhash:
 
     def test_add_classification_exists(self):
         self._phash._mongo.get_file = Mock(return_value=('blah', return_bytes('tests/images/phash_match.png')[1]))
-        success, reason = self._phash.add_classification('some id', 'PHISHING', 'amazon')
+        success, reason = self._phash.add_classification('some id', 'MALWARE', 'netflix')
         obj = self._phash._mongo._collection.find_one({
             'chunk1': 'bf37',
             'chunk2': 'b023',
             'chunk3': '62e2',
             'chunk4': '62e2'
         })
-        assert_equal(obj.get('count'), 2)
         assert_true(success)
+        assert_equal(obj.get('count'), 2)
+        # Because this was adding a duplicate, type/target should NOT be changed from their original values
+        assert_equal(obj.get('type'), 'PHISHING')
+        assert_equal(obj.get('target'), 'amazon')
 
     def test_add_classification_no_existing_image(self):
         success, reason = self._phash.add_classification('non-existant id', 'PHISHING', 'amazon')
