@@ -108,37 +108,7 @@ class PHash(Classifier):
             }
         ):
             return True, ''
-        return False, 'Unable to update count for {}'.format(imageid)
-
-        # phash = self._mongo.find_incident({
-        #     'chunk1': str(image_hash)[0:4],
-        #     'chunk2': str(image_hash)[4:8],
-        #     'chunk3': str(image_hash)[8:12],
-        #     'chunk4': str(image_hash)[12:16]
-        # })
-        # if phash:
-        #     if self._mongo._collection.find_one_and_update(
-        #         {'_id': phash.get('_id')},
-        #         {'$inc': { 'count': 1 }}
-        #     ):
-        #         return True, ''
-        #     return False, 'Unable to update count for {}'.format(imageid)
-
-        # # If we're here, the keyset doesn't exist yet
-        # if self._mongo.add_incident({
-        #     'valid': 'yes',
-        #     'type': abuse_type,
-        #     'target': target,
-        #     'chunk1': str(image_hash)[0:4],
-        #     'chunk2': str(image_hash)[4:8],
-        #     'chunk3': str(image_hash)[8:12],
-        #     'chunk4': str(image_hash)[12:16],
-        #     'count': 1
-        # }):
-        #     return True, '' 
-
-        # # It didn't exist, but we also couldn't add it? We should never get here
-        # return False, 'No new document created for {}'.format(imageid)
+        return False, 'Unable to add or update DB for {}'.format(imageid)
 
     def _search(self, hash_val):
         """
