@@ -19,6 +19,8 @@ class PHash(Classifier):
         self._logger = logging.getLogger(__name__)
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
+        self._bucket_ranges = settings.BUCKETS
+        self._bucket_weights = settings.BUCKET_WEIGHTS
 
     def classify(self, candidate, url=True, confidence=0.75):
         """
@@ -63,23 +65,42 @@ class PHash(Classifier):
 
     def _find_match(self, hash_candidate, confidence):
         res_doc = None
-        max_certainty = confidence
-        if hash_candidate:
-            for doc in self._search(hash_candidate):
-                try:
-                    doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
-                except Exception as e:
-                    self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
-                    continue
-                certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
-                self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
-                if certainty >= max_certainty:
-                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
-                    max_certainty = certainty
-                    res_doc = doc
-                    if max_certainty == 1.0:
-                        break
-        return (res_doc, max_certainty) if res_doc else (None, None)
+        max_certainty = 0
+        buckets = [ 0 ] * len(self._bucket_weights)
+        confidence_over = 0
+        confidence_under = len(self._bucket_weights)
+
+        if not hash_candidate:
+            return (None, None)
+
+        for doc in self._search(hash_candidate):
+            try:
+                doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
+            except Exception as e:
+                self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
+                continue
+            certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
+            for i in range(0, len(buckets) - 2):
+                if self._bucket_ranges[i] <= certainty and certainty < self._bucket_ranges[i+1]:
+                    buckets[i] += doc.get('count', 1)
+
+        for i in range(0, len(buckets) - 1):
+            confidence_over += buckets[i] * self._bucket_weights[i]
+            confidence_under += buckets[i]
+        if confidence_over == 0:
+            return (None, None) # we didn't find anything within minimum match range
+
+        confidence = ((confidence_over / confidence_under) * len(self._bucket_weights)) + self._bucket_ranges[0]
+
+        return (None, confidence)
+#            self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
+#            if certainty >= max_certainty:
+#                self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
+#                max_certainty = certainty
+#                res_doc = doc
+#                if max_certainty == 1.0:
+#                    break
+#        return (res_doc, max_certainty) if res_doc else (None, None)
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
