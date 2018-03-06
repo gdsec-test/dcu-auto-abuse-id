@@ -2,7 +2,7 @@
 #
 #
 
-FROM ubuntu:16.04
+FROM ubuntu:16.10
 MAINTAINER DCU ENG <DCUEng@godaddy.com>
 
 RUN groupadd -r dcu && useradd -r -m -g dcu dcu
