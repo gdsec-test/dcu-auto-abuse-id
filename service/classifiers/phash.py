@@ -6,7 +6,8 @@ from PIL import Image
 from service.utils.urihelper import URIHelper
 from service.classifiers.interface import Classifier
 from dcdatabase.mongohelper import MongoHelper
-
+from pymongo import ReturnDocument
+from bson.objectid import ObjectId
 
 class PHash(Classifier):
 
@@ -106,20 +107,28 @@ class PHash(Classifier):
         image_hash = self._get_image_hash(io.BytesIO(image))
         if not image_hash:
             return False, 'Unable to hash image {}'.format(imageid)
-        if self._mongo.add_incident(
+
+        if self._mongo._collection.find_one_and_update(
             {
-                'valid': 'yes',
-                'type': abuse_type,
-                'target': target,
                 'chunk1': str(image_hash)[0:4],
                 'chunk2': str(image_hash)[4:8],
                 'chunk3': str(image_hash)[8:12],
                 'chunk4': str(image_hash)[12:16]
-            }
+            },
+            {
+                '$inc': { 'count': 1 },
+                '$setOnInsert': {
+                    'valid': 'yes',
+                    'type': abuse_type,
+                    'target': target,
+                    'imageid': ObjectId(imageid)
+                }
+            },
+            upsert = True,
+            return_document = ReturnDocument.AFTER
         ):
             return True, ''
-        else:
-            return False, 'No new document created for {}'.format(imageid)
+        return False, 'Unable to add or update DB for {}'.format(imageid)
 
     def _search(self, hash_val):
         """
