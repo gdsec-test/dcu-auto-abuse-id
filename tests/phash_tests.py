@@ -35,16 +35,16 @@ class TestPhash:
             "type": "PHISHING",
             "chunk4": "62e2",
             "valid": "yes",
-            "count": 1
+            "count": 100000
         }, {
             "target": "netflix",
-            "chunk3": "2f0e",
+            "chunk3": "2f00",
             "chunk2": "0585",
             "chunk1": "afbf",
             "type": "PHISHING",
             "chunk4": "8585",
             "valid": "yes",
-            "count": 1
+            "count": 100000
         }, {
             "target": "amazon",
             "chunk3": "6ec4",
@@ -60,7 +60,7 @@ class TestPhash:
         self._phash._validate = Mock(return_value=return_bytes('tests/images/phash_match.png'))
         data = self._phash.classify('some url')
         assert_true(data.get('type') == 'PHISHING')
-        assert_true(data.get('confidence') == 1.0)
+        assert_equal(round(data.get('confidence'), 4), 1.0)
         assert_true(data.get('target') == 'amazon')
 
     def test_phash_classify_miss(self):
@@ -74,7 +74,7 @@ class TestPhash:
         self._phash._validate = Mock(return_value=return_bytes('tests/images/netflix_match.png'))
         data = self._phash.classify('some url')
         assert_true(data.get('type') == 'PHISHING')
-        assert_true(data.get('confidence') > 0.95 and data.get('confidence') < 1.0)
+        assert_equal(round(data.get('confidence'), 4), 0.95)
         assert_true(data.get('target') == 'netflix')
 
     @patch.object(MongoHelper, 'get_file')
@@ -82,7 +82,7 @@ class TestPhash:
         mongo_get.return_value = return_bytes('tests/images/phash_match.png')
         data = self._phash.classify('some id', url=False)
         assert_true(data.get('type') == 'PHISHING')
-        assert_true(data.get('confidence') == 1.0)
+        assert_equal(round(data.get('confidence'), 4), 1.0)
         assert_true(data.get('target') == 'amazon')
 
     @patch.object(MongoHelper, 'get_file')
@@ -98,7 +98,7 @@ class TestPhash:
         mongo_get.return_value = return_bytes('tests/images/netflix_match.png')
         data = self._phash.classify('some id', url=False)
         assert_true(data.get('type') == 'PHISHING')
-        assert_true(data.get('confidence') > 0.95 and data.get('confidence') < 1.0)
+        assert_equal(round(data.get('confidence'), 4), 0.95)
         assert_true(data.get('target') == 'netflix')
 
     @patch.object(MongoHelper, 'get_file')
@@ -134,3 +134,14 @@ class TestPhash:
         success, reason = self._phash.add_classification('non-existant id', 'PHISHING', 'amazon')
         assert_false(success)
         assert_true(reason is not None)
+
+    def test_phash_weigh_buckets(self):
+        # Note: the values here differ slightly from the design doc at
+        # https://confluence.godaddy.com/display/ITSecurity/Popularity+Weighting+for+Classified+Hashes
+        # This is due to slight rounding differences, e.g. 5/6 ~= 0.833333333, etc.
+        # When weighing, these values aren't rounded, resulting in slightly different values
+        assert_equal(round(self._phash._weigh([0,0,0,0,1]),4), 0.7917)
+        assert_equal(round(self._phash._weigh([0,0,0,0,5]),4), 0.875)
+        assert_equal(round(self._phash._weigh([1,0,0,0,0]),4), 0.7583)
+        assert_equal(round(self._phash._weigh([5,0,0,0,0]),4), 0.775)
+        assert_equal(round(self._phash._weigh([0,0,12,263,13423]),4), 0.9989)
