@@ -64,10 +64,18 @@ class PHash(Classifier):
 
     def _find_match(self, hash_candidate, confidence):
         res_doc = None
-        max_certainty = 0
-        buckets = [ 0 ] * len(self._bucket_weights)
-        confidence_over = 0
-        confidence_under = len(self._bucket_weights)
+        confidence_buckets = [ 0 ] * len(self._bucket_weights)
+        target_buckets = {}
+        type_buckets = {}
+        target_match = {
+            'value': 'err',
+            'confidence': 0.0
+        }
+        type_match = {
+            'value': 'err',
+            'confidence': 0.0
+        }
+
 
         if not hash_candidate:
             return (None, None)
@@ -78,20 +86,48 @@ class PHash(Classifier):
             except Exception as e:
                 self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
                 continue
-            certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
-            for i in range(0, len(buckets) - 2):
-                if self._bucket_ranges[i] <= certainty and certainty < self._bucket_ranges[i+1]:
-                    buckets[i] += doc.get('count', 1)
+            if doc.get('valid') not in ['yes', True]:
+                continue
+            doctype = doc.get('type', 'err')
+            doctarget = doc.get('target', 'err')
+            if doctype not in type_buckets.keys():
+                type_buckets[doctype] = [ 0 ] * len(self._bucket_weights)
+            if doctarget not in target_buckets.keys():
+                target_buckets[doctarget] = [ 0 ] * len(self._bucket_weights)
 
-        for i in range(0, len(buckets) - 1):
-            confidence_over += buckets[i] * self._bucket_weights[i]
-            confidence_under += buckets[i]
-        if confidence_over == 0:
-            return (None, None) # we didn't find anything within minimum match range
+            certainty = ( PHash._confidence(str(hash_candidate), str(doc_hash)) * 100 )
+            for i in range(0, len(confidence_buckets)):
+                if self._bucket_ranges[i] < certainty and certainty <= self._bucket_ranges[i+1]:
+                    count = doc.get('count', 1)
+                    confidence_buckets[i] += count
+                    type_buckets[doctype][i] += count
+                    target_buckets[doctarget][i] += count
 
-        confidence = ((confidence_over / confidence_under) * len(self._bucket_weights)) + self._bucket_ranges[0]
+        match_confidence = self._weigh(confidence_buckets)
+        if match_confidence == 0:
+            return (None, None)
 
-        return (None, confidence)
+        for target in target_buckets.keys():
+            target_confidence = self._weigh(target_buckets[target])
+            if target_confidence > target_match['confidence']:
+                target_match = {
+                    'value': target,
+                    'confidence': target_confidence
+                }
+
+        for type_val in type_buckets.keys():
+            type_confidence = self._weigh(type_buckets[type_val])
+            if type_confidence > type_match['confidence']:
+                type_match = {
+                    'value': type_val,
+                    'confidence': type_confidence
+                }
+        ret_dict = {
+            'target': target_match['value'],
+            'type': type_match['value'],
+            'confidence': float,
+        }
+        return ret_dict, match_confidence
 #            self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
 #            if certainty >= max_certainty:
 #                self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
@@ -162,6 +198,19 @@ class PHash(Classifier):
         ):
             yield doc
 
+    def _weigh(self, buckets):
+        confidence_over = 0.0
+        confidence_under = float(len(self._bucket_weights))
+
+        for i in range(0, len(buckets)):
+            confidence_over += buckets[i] * self._bucket_weights[i]
+            confidence_under += buckets[i]
+        if confidence_over == 0:
+            return 0
+
+        confidence = ((confidence_over / confidence_under) * len(self._bucket_weights)) + self._bucket_ranges[0]
+        return (confidence / 100.0)
+
     @staticmethod
     def _create_response(candidate, matching_doc, certainty):
         """
@@ -173,12 +222,9 @@ class PHash(Classifier):
         ret = PHash._get_response_dict()
         ret['candidate'] = candidate
         if matching_doc:
-            matching_hash = PHash._assemble_hash(matching_doc)
-            ret['type'] = matching_doc.get('type')
+            ret['type'] = matching_doc['type']
             ret['confidence'] = certainty
-            ret['target'] = matching_doc.get('target')
-            ret['meta']['imageId'] = str(matching_doc.get('imageId'))
-            ret['meta']['fingerprint'] = matching_hash
+            ret['target'] = matching_doc['target']
         return ret
 
     @staticmethod
