@@ -64,13 +64,18 @@ class PHash(Classifier):
         return PHash._create_response(imageid, doc, certainty)
 
     def _find_match(self, hash_candidate):
+        '''
+        Takes a hash, and provides a confidence rating + type/target based on
+        similar hashes, and how many times those similar hashes have been flagged,
+        using weighted averages to make the determination
+        :param hash_candidate: string of the phash to search for
+        :return Tuple: dict of type/target, and confidence rating
+        '''
         if not hash_candidate:
             return (None, None)
-        # array of buckets for determining confidence
+        # Initialize bucket sets for confidence, possible targets, and abuse types
         confidence_buckets = [0] * len(self._bucket_weights)
-        # dict of bucket arrays for determining confidence of each possible target
         target_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
-        # dict of bucket arrays for determining confidence of each possible abuse type
         type_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
 
         for doc in self._search(hash_candidate):
@@ -81,8 +86,12 @@ class PHash(Classifier):
                 continue
 
             certainty = PHash._confidence(str(hash_candidate), str(doc_hash)) * 100
-            for i in range(0, len(confidence_buckets)):
+            for i in range(len(confidence_buckets)):
+                # Iterate through possible confidence ranges based on certainty
+                # e.g. 75 < x <= 80, 80 < x <= 85, etc.
                 if self._bucket_ranges[i] < certainty <= self._bucket_ranges[i+1]:
+                    # Once the correct range is found, add the number of reports that the
+                    # match has to the appropriate bucket for confidence/type/target
                     count = doc.get('count', 1)
                     confidence_buckets[i] += count
                     type_buckets[doc.get('type', 'UNKNOWN')][i] += count
