@@ -8,6 +8,7 @@ from service.classifiers.interface import Classifier
 from dcdatabase.mongohelper import MongoHelper
 from pymongo import ReturnDocument
 from bson.objectid import ObjectId
+from collections import defaultdict
 
 class PHash(Classifier):
 
@@ -63,16 +64,15 @@ class PHash(Classifier):
         return PHash._create_response(imageid, doc, certainty)
 
     def _find_match(self, hash_candidate):
-        res_dict = None
-        # array of buckets for determining confidence
-        confidence_buckets = [ 0 ] * len(self._bucket_weights)
-        # dict of bucket arrays for determining confidence of each possible target
-        target_buckets = {}
-        # dict of bucket arrays for determining confidence of each possible abuse type
-        type_buckets = {}
-
         if not hash_candidate:
             return (None, None)
+        res_dict = None
+        # array of buckets for determining confidence
+        confidence_buckets = [0] * len(self._bucket_weights)
+        # dict of bucket arrays for determining confidence of each possible target
+        target_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
+        # dict of bucket arrays for determining confidence of each possible abuse type
+        type_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
 
         for doc in self._search(hash_candidate):
             try:
@@ -80,20 +80,14 @@ class PHash(Classifier):
             except Exception as e:
                 self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
                 continue
-            doctype = doc.get('type', 'UNKNOWN')
-            doctarget = doc.get('target', 'UNKNOWN')
-            if doctype not in type_buckets.keys():
-                type_buckets[doctype] = [ 0 ] * len(self._bucket_weights)
-            if doctarget not in target_buckets.keys():
-                target_buckets[doctarget] = [ 0 ] * len(self._bucket_weights)
 
-            certainty = ( PHash._confidence(str(hash_candidate), str(doc_hash)) * 100 )
+            certainty = PHash._confidence(str(hash_candidate), str(doc_hash)) * 100
             for i in range(0, len(confidence_buckets)):
                 if self._bucket_ranges[i] < certainty <= self._bucket_ranges[i+1]:
                     count = doc.get('count', 1)
                     confidence_buckets[i] += count
-                    type_buckets[doctype][i] += count
-                    target_buckets[doctarget][i] += count
+                    type_buckets[doc.get('type', 'UNKNOWN')][i] += count
+                    target_buckets[doc.get('target', 'UNKNOWN')][i] += count
 
         match_confidence = self._weigh(confidence_buckets)
         if match_confidence == 0:
