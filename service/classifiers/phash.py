@@ -66,7 +66,6 @@ class PHash(Classifier):
     def _find_match(self, hash_candidate):
         if not hash_candidate:
             return (None, None)
-        res_dict = None
         # array of buckets for determining confidence
         confidence_buckets = [0] * len(self._bucket_weights)
         # dict of bucket arrays for determining confidence of each possible target
@@ -90,14 +89,12 @@ class PHash(Classifier):
                     target_buckets[doc.get('target', 'UNKNOWN')][i] += count
 
         match_confidence = self._weigh(confidence_buckets)
-        if match_confidence == 0:
-            return (None, None)
                 
         res_dict = {
             'target': self._best_bucket(target_buckets),
             'type': self._best_bucket(type_buckets)
         }
-        return res_dict, match_confidence
+        return (res_dict, match_confidence) if match_confidence else (None, None)
 
     def _best_bucket(self, buckets):
         '''
