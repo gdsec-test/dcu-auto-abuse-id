@@ -71,15 +71,6 @@ class PHash(Classifier):
         # dict of bucket arrays for determining confidence of each possible abuse type
         type_buckets = {}
 
-        target_match = {
-            'value': 'UNKNOWN',
-            'confidence': 0.0
-        }
-        type_match = {
-            'value': 'UNKNOWN',
-            'confidence': 0.0
-        }
-
         if not hash_candidate:
             return (None, None)
 
@@ -89,8 +80,6 @@ class PHash(Classifier):
             except Exception as e:
                 self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
                 continue
-            if doc.get('valid') not in ['yes', True]:
-                continue # Don't consider hashes marked as "invalid"
             doctype = doc.get('type', 'UNKNOWN')
             doctarget = doc.get('target', 'UNKNOWN')
             if doctype not in type_buckets.keys():
@@ -100,7 +89,7 @@ class PHash(Classifier):
 
             certainty = ( PHash._confidence(str(hash_candidate), str(doc_hash)) * 100 )
             for i in range(0, len(confidence_buckets)):
-                if self._bucket_ranges[i] < certainty and certainty <= self._bucket_ranges[i+1]:
+                if self._bucket_ranges[i] < certainty <= self._bucket_ranges[i+1]:
                     count = doc.get('count', 1)
                     confidence_buckets[i] += count
                     type_buckets[doctype][i] += count
@@ -109,30 +98,27 @@ class PHash(Classifier):
         match_confidence = self._weigh(confidence_buckets)
         if match_confidence == 0:
             return (None, None)
-
-        # Based on weighted averages, find out what the "most likely target" is among matching hashes
-        for target in target_buckets.keys():
-            target_confidence = self._weigh(target_buckets[target])
-            if target_confidence > target_match['confidence']:
-                target_match = {
-                    'value': target,
-                    'confidence': target_confidence
-                }
-
-        # Based on weighted averages, find out what the "most likely abuse type" is among matching hashes
-        for type_val in type_buckets.keys():
-            type_confidence = self._weigh(type_buckets[type_val])
-            if type_confidence > type_match['confidence']:
-                type_match = {
-                    'value': type_val,
-                    'confidence': type_confidence
-                }
                 
         res_dict = {
-            'target': target_match['value'],
-            'type': type_match['value']
+            'target': self._best_bucket(target_buckets),
+            'type': self._best_bucket(type_buckets)
         }
         return res_dict, match_confidence
+
+    def _best_bucket(self, buckets):
+        '''
+        Takes a dict of buckets, weighs them, and returns the key for the highest-weighed bucket
+        :param buckets: A dict of buckets
+        :return String: the key for the highest-confidence bucket
+        '''
+        best_confidence = 0.0
+        match = 'UNKNOWN'
+        for key, value in buckets.iteritems():
+            confidence = self._weigh(value)
+            if confidence > best_confidence:
+                match = key
+                best_confidence = confidence
+        return match
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
