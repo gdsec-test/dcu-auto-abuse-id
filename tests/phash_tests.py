@@ -57,55 +57,55 @@ class TestPhash:
     def test_phash_classify_match(self):
         self._phash._validate = Mock(return_value=return_bytes('tests/images/phash_match.png'))
         data = self._phash.classify('some url')
-        assert_true(data.get('type') == 'PHISHING')
+        assert_equal(data.get('type'), 'PHISHING')
         assert_equal(round(data.get('confidence'), 4), 1.0)
-        assert_true(data.get('target') == 'amazon')
+        assert_equal(data.get('target'), 'amazon')
 
     def test_phash_classify_miss(self):
         self._phash._validate = Mock(return_value=return_bytes('tests/images/maaaaybe.jpg'))
         data = self._phash.classify('some url')
-        assert_true(data.get('type') == 'UNKNOWN')
-        assert_true(data.get('confidence') == 0.0)
-        assert_true(data.get('target') is None)
+        assert_equal(data.get('type'), 'UNKNOWN')
+        assert_equal(data.get('confidence'), 0.0)
+        assert_equal(data.get('target'), None)
 
     def test_phash_classify_partial_match(self):
         self._phash._validate = Mock(return_value=return_bytes('tests/images/netflix_match.png'))
         data = self._phash.classify('some url')
-        assert_true(data.get('type') == 'PHISHING')
+        assert_equal(data.get('type'), 'PHISHING')
         assert_equal(round(data.get('confidence'), 4), 0.95)
-        assert_true(data.get('target') == 'netflix')
+        assert_equal(data.get('target'), 'netflix')
 
     @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_match(self, mongo_get):
         mongo_get.return_value = return_bytes('tests/images/phash_match.png')
         data = self._phash.classify('some id', url=False)
-        assert_true(data.get('type') == 'PHISHING')
+        assert_equal(data.get('type'), 'PHISHING')
         assert_equal(round(data.get('confidence'), 4), 1.0)
-        assert_true(data.get('target') == 'amazon')
+        assert_equal(data.get('target'), 'amazon')
 
     @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_miss(self, mongo_get):
         mongo_get.return_value = return_bytes('tests/images/maaaaybe.jpg')
         data = self._phash.classify('some id', url=False)
-        assert_true(data.get('type') == 'UNKNOWN')
-        assert_true(data.get('confidence') == 0.0)
-        assert_true(data.get('target') is None)
+        assert_equal(data.get('type'), 'UNKNOWN')
+        assert_equal(data.get('confidence'), 0.0)
+        assert_equal(data.get('target'), None)
 
     @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_partial_match(self, mongo_get):
         mongo_get.return_value = return_bytes('tests/images/netflix_match.png')
         data = self._phash.classify('some id', url=False)
-        assert_true(data.get('type') == 'PHISHING')
+        assert_equal(data.get('type'), 'PHISHING')
         assert_equal(round(data.get('confidence'), 4), 0.95)
-        assert_true(data.get('target') == 'netflix')
+        assert_equal(data.get('target'), 'netflix')
 
     @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_missing_image(self, mongo_get):
         mongo_get.return_value = None
         data = self._phash.classify('some id', url=False)
-        assert_true(data.get('type') == 'UNKNOWN')
-        assert_true(data.get('confidence') == 0.0)
-        assert_true(data.get('target') is None)
+        assert_equal(data.get('type'), 'UNKNOWN')
+        assert_equal(data.get('confidence'), 0.0)
+        assert_equal(data.get('target'), None)
 
     def test_add_classification_success(self):
         self._phash._mongo.get_file = Mock(return_value=('some file', 'some_bytes'))
