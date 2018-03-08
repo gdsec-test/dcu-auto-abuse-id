@@ -53,6 +53,9 @@ class TestingConfig(AppConfig):
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017
+    #changing these will break testing
+    BUCKETS = [ 75, 80, 85, 90, 95, 100 ] # e.g. 75 <= x < 80, 80 <= x < 85, etc.
+    BUCKET_WEIGHTS = [ 1, 2, 3, 4, 5 ] # how to weigh each bucket
 
 
 config_by_name = {'dev': DevelopmentAppConfig,
