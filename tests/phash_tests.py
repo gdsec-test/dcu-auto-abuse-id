@@ -86,6 +86,16 @@ class TestPhash:
         assert_equal(data.get('target'), 'amazon')
 
     @patch.object(MongoHelper, 'get_file')
+    def test_phash_classify_image_id_match_bad_confidence(self, mongo_get):
+        mongo_get.return_value = return_bytes('tests/images/phash_match.png')
+        data = self._phash.classify('5a6f6feefec7ed000f587c13', url=False, confidence=0.0)
+        assert_equal(data.get('type'), 'PHISHING')
+        assert_equal(round(data.get('confidence'), 4), 1.0)
+        assert_equal(data.get('target'), 'amazon')
+        data = self._phash.classify('5a6f6feefec7ed000f587c13', url=False, confidence=999.0)
+        assert_equal(round(data.get('confidence'), 4), 1.0)
+
+    @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_miss(self, mongo_get):
         mongo_get.return_value = return_bytes('tests/images/maaaaybe.jpg')
         data = self._phash.classify('5a6f6feefec7ed000f587c13', url=False)
@@ -100,6 +110,8 @@ class TestPhash:
         assert_equal(data.get('type'), 'PHISHING')
         assert_equal(round(data.get('confidence'), 4), 0.95)
         assert_equal(data.get('target'), 'netflix')
+        data = self._phash.classify('5a6f6feefec7ed000f587c13', url=False, confidence=0.92)
+        assert_equal(round(data.get('confidence'), 4), 0.97)
 
     @patch.object(MongoHelper, 'get_file')
     def test_phash_classify_image_id_missing_image(self, mongo_get):
@@ -140,8 +152,10 @@ class TestPhash:
         # https://confluence.godaddy.com/display/ITSecurity/Popularity+Weighting+for+Classified+Hashes
         # This is due to slight rounding differences, e.g. 5/6 ~= 0.833333333, etc.
         # When weighing, these values aren't rounded, resulting in slightly different values
-        assert_equal(round(self._phash._weigh([0,0,0,0,1]),4), 0.7917)
-        assert_equal(round(self._phash._weigh([0,0,0,0,5]),4), 0.875)
-        assert_equal(round(self._phash._weigh([1,0,0,0,0]),4), 0.7583)
-        assert_equal(round(self._phash._weigh([5,0,0,0,0]),4), 0.775)
-        assert_equal(round(self._phash._weigh([0,0,12,263,13423]),4), 0.9989)
+        assert_equal(round(self._phash._weigh([0,0,0,0,1], 75.0),4), 0.7917)
+        assert_equal(round(self._phash._weigh([0,0,0,0,5], 75.0),4), 0.875)
+        assert_equal(round(self._phash._weigh([1,0,0,0,0], 75.0),4), 0.7583)
+        assert_equal(round(self._phash._weigh([5,0,0,0,0], 75.0),4), 0.775)
+        assert_equal(round(self._phash._weigh([0,0,12,263,13423], 75.0),4), 0.9989)
+
+        assert_equal(round(self._phash._weigh([5,0,0,0,0], 80.0),4), 0.825)

@@ -22,9 +22,7 @@ class PHash(Classifier):
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
         self._bucket_weights = settings.BUCKET_WEIGHTS
-        self._bucket_step = settings.BUCKET_STEP
         self._num_buckets = len(settings.BUCKET_WEIGHTS)
-        self._min_confidence = 100 - (self._num_buckets * self._bucket_step)
 
     def classify(self, candidate, url=True, confidence=0.75):
         """
@@ -44,29 +42,34 @@ class PHash(Classifier):
             }
         }
         """
-        return self._classify_image_id(candidate) if not url else self._classify_uri(candidate)
+        if (confidence <= 0.75):
+            confidence = 0.75
+        if (confidence >= 1.0):
+            confidence = 1.0
 
-    def _classify_uri(self, uri):
+        return self._classify_image_id(candidate, confidence) if not url else self._classify_uri(candidate, confidence)
+
+    def _classify_uri(self, uri, confidence):
         valid, screenshot = self._validate(uri)
         if not valid:
             ret_dict = PHash._get_response_dict()
             ret_dict['candidate'] = uri
             return ret_dict
         hash_candidate = self._get_image_hash(io.BytesIO(screenshot))
-        doc, certainty = self._find_match(hash_candidate)
+        doc, certainty = self._find_match(hash_candidate, confidence)
         return PHash._create_response(uri, doc, certainty)
 
-    def _classify_image_id(self, imageid):
+    def _classify_image_id(self, imageid, confidence):
         image = None
         try:
             _, image = self._mongo.get_file(imageid)
         except Exception as e:
             self._logger.error('Unable to find image {}'.format(imageid))
         image_hash = self._get_image_hash(io.BytesIO(image))
-        doc, certainty = self._find_match(image_hash)
+        doc, certainty = self._find_match(image_hash, confidence)
         return PHash._create_response(imageid, doc, certainty)
 
-    def _find_match(self, hash_candidate):
+    def _find_match(self, hash_candidate, min_confidence):
         '''
         Takes a hash, and provides a confidence rating + type/target based on
         similar hashes, and how many times those similar hashes have been flagged,
@@ -82,7 +85,8 @@ class PHash(Classifier):
         confidence_buckets = [0] * self._num_buckets
         target_buckets = defaultdict(lambda: [0] * self._num_buckets)
         type_buckets = defaultdict(lambda: [0] * self._num_buckets)
-
+        min_confidence *= 100
+        bucket_step = (100.0-min_confidence) / self._num_buckets
         for doc in self._search(hash_candidate):
             try:
                 doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
@@ -91,25 +95,33 @@ class PHash(Classifier):
                 continue
 
             certainty = PHash._confidence(str(hash_candidate), str(doc_hash)) * 100
-            if certainty <= self._min_confidence:
+            if certainty <= min_confidence and min_confidence != 100.0:
                 continue
             # calculate the index for the appropriate bucket
-            # e.g. 76.0 yields 0, 80 yields 1, 100 yields 4 (assuming _bucket_step is 5 and _min_confidence is 75)
-            bucket = int(math.ceil((certainty-self._min_confidence)/self._bucket_step))-1
+            # e.g. 76.0 yields 0, 80 yields 1, 100 yields 4 (assuming bucket_step is 5 and min_confidence is 75)
+            bucket = 0
+            if min_confidence != 100.0:
+                bucket = int(math.ceil((certainty-min_confidence)/bucket_step))-1
             count = doc.get('count', 1)
             confidence_buckets[bucket] += count
             type_buckets[doc.get('type', 'UNKNOWN')][bucket] += count
             target_buckets[doc.get('target', 'UNKNOWN')][bucket] += count
 
-        match_confidence = self._weigh(confidence_buckets)
+        if min_confidence == 100.0:
+            if confidence_buckets[0]:
+                match_confidence = 1.0
+            else:
+                match_confidence = 0.0
+        else:
+            match_confidence = self._weigh(confidence_buckets, min_confidence)
                 
         res_dict = {
-            'target': self._best_bucket(target_buckets),
-            'type': self._best_bucket(type_buckets)
+            'target': self._best_bucket(target_buckets, min_confidence),
+            'type': self._best_bucket(type_buckets, min_confidence)
         }
         return (res_dict, match_confidence) if match_confidence else (None, None)
 
-    def _best_bucket(self, buckets):
+    def _best_bucket(self, buckets, min_confidence):
         '''
         Takes a dict of buckets, weighs them, and returns the key for the highest-weighed bucket
         :param buckets: A dict of buckets
@@ -118,7 +130,7 @@ class PHash(Classifier):
         best_confidence = 0.0
         match = 'UNKNOWN'
         for key, value in buckets.iteritems():
-            confidence = self._weigh(value)
+            confidence = self._weigh(value, min_confidence)
             if confidence > best_confidence:
                 match = key
                 best_confidence = confidence
@@ -193,7 +205,7 @@ class PHash(Classifier):
         ):
             yield doc
 
-    def _weigh(self, buckets):
+    def _weigh(self, buckets, min_confidence):
         confidence_over = 0.0
         confidence_under = float(self._num_buckets)
 
@@ -203,7 +215,7 @@ class PHash(Classifier):
         if confidence_over == 0:
             return 0
 
-        confidence = ((confidence_over / confidence_under) * self._num_buckets) + self._min_confidence
+        confidence = ((confidence_over / confidence_under) * self._num_buckets) + min_confidence
         return (confidence / 100.0)
 
     @staticmethod
