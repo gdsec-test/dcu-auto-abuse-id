@@ -30,6 +30,8 @@ class PHash(Classifier):
         :param candidate:
         :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
         :param confidence: a minimum confidence value that must be between 0.75 and 1.0 (inclusive)
+        Only matches greater than this param will be evaluated (unless this is 1.0, in which case,
+        only exact matches are evaluated)
         :return: dictionary with at the following fields
         {
             "candidate": string,
