@@ -77,6 +77,8 @@ class PHash(Classifier):
         if not hash_candidate:
             return (None, None)
         # Initialize bucket sets for confidence, possible targets, and abuse types
+        # allowing for multiple buckets based on malicious type
+        # i.e.: target_buckets['anything'] becomes e.g. [0, 0, 0, 0, 0] default
         confidence_buckets = [0] * self._num_buckets
         target_buckets = defaultdict(lambda: [0] * self._num_buckets)
         type_buckets = defaultdict(lambda: [0] * self._num_buckets)
