@@ -108,10 +108,7 @@ class PHash(Classifier):
             target_buckets[doc.get('target', 'UNKNOWN')][bucket] += count
 
         if min_confidence == 100.0:
-            if confidence_buckets[0]:
-                match_confidence = 1.0
-            else:
-                match_confidence = 0.0
+            match_confidence = 1.0 if confidence_buckets[0] else 0.0
         else:
             match_confidence = self._weigh(confidence_buckets, min_confidence)
                 
