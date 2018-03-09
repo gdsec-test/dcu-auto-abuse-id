@@ -1,6 +1,7 @@
 import logging
 import io
 import imagehash
+import math
 
 from PIL import Image
 from service.utils.urihelper import URIHelper
@@ -20,8 +21,10 @@ class PHash(Classifier):
         self._logger = logging.getLogger(__name__)
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
-        self._bucket_ranges = settings.BUCKETS
         self._bucket_weights = settings.BUCKET_WEIGHTS
+        self._bucket_step = settings.BUCKET_STEP
+        self._num_buckets = len(settings.BUCKET_WEIGHTS)
+        self._min_confidence = 100 - (self._num_buckets * self._bucket_step)
 
     def classify(self, candidate, url=True, confidence=0.75):
         """
@@ -74,9 +77,9 @@ class PHash(Classifier):
         if not hash_candidate:
             return (None, None)
         # Initialize bucket sets for confidence, possible targets, and abuse types
-        confidence_buckets = [0] * len(self._bucket_weights)
-        target_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
-        type_buckets = defaultdict(lambda: [0] * len(self._bucket_weights))
+        confidence_buckets = [0] * self._num_buckets
+        target_buckets = defaultdict(lambda: [0] * self._num_buckets)
+        type_buckets = defaultdict(lambda: [0] * self._num_buckets)
 
         for doc in self._search(hash_candidate):
             try:
@@ -86,16 +89,15 @@ class PHash(Classifier):
                 continue
 
             certainty = PHash._confidence(str(hash_candidate), str(doc_hash)) * 100
-            for i in range(len(confidence_buckets)):
-                # Iterate through possible confidence ranges based on certainty
-                # e.g. 75 < x <= 80, 80 < x <= 85, etc.
-                if self._bucket_ranges[i] < certainty <= self._bucket_ranges[i+1]:
-                    # Once the correct range is found, add the number of reports that the
-                    # match has to the appropriate bucket for confidence/type/target
-                    count = doc.get('count', 1)
-                    confidence_buckets[i] += count
-                    type_buckets[doc.get('type', 'UNKNOWN')][i] += count
-                    target_buckets[doc.get('target', 'UNKNOWN')][i] += count
+            if certainty <= self._min_confidence:
+                continue
+            # calculate the index for the appropriate bucket
+            # e.g. 76.0 yields 0, 80 yields 1, 100 yields 4 (assuming _bucket_step is 5 and _min_confidence is 75)
+            bucket = int(math.ceil((certainty-self._min_confidence)/self._bucket_step))-1
+            count = doc.get('count', 1)
+            confidence_buckets[bucket] += count
+            type_buckets[doc.get('type', 'UNKNOWN')][bucket] += count
+            target_buckets[doc.get('target', 'UNKNOWN')][bucket] += count
 
         match_confidence = self._weigh(confidence_buckets)
                 
@@ -191,7 +193,7 @@ class PHash(Classifier):
 
     def _weigh(self, buckets):
         confidence_over = 0.0
-        confidence_under = float(len(self._bucket_weights))
+        confidence_under = float(self._num_buckets)
 
         for i in range(0, len(buckets)):
             confidence_over += buckets[i] * self._bucket_weights[i]
@@ -199,7 +201,7 @@ class PHash(Classifier):
         if confidence_over == 0:
             return 0
 
-        confidence = ((confidence_over / confidence_under) * len(self._bucket_weights)) + self._bucket_ranges[0]
+        confidence = ((confidence_over / confidence_under) * self._num_buckets) + self._min_confidence
         return (confidence / 100.0)
 
     @staticmethod

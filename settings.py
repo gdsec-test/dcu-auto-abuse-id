@@ -12,8 +12,9 @@ class AppConfig(object):
     DB_HOST = 'localhost'
     COLLECTION = 'fingerprints'
     LOGGING_COLLECTION = 'logs'
-    BUCKETS = [75, 80, 85, 90, 95, 100] # e.g. 75 < x <= 80, 80 < x <= 85, etc.
+    BUCKET_STEP = 5 # eg 75-80, 80-85, 85-90, 90-95, 95-100
     BUCKET_WEIGHTS = [1, 2, 3, 4, 5] # how to weigh each bucket
+    # the number of buckets is derived from the number of weights
 
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
@@ -54,7 +55,7 @@ class TestingConfig(AppConfig):
     DB_HOST = 'localhost'
     DB_PORT = 27017
     #changing these will break testing
-    BUCKETS = [75, 80, 85, 90, 95, 100] # e.g. 75 < x <= 80, 80 < x <= 85, etc.
+    BUCKET_STEP = 5 # eg 75-80, 80-85, 85-90, 90-95, 95-100
     BUCKET_WEIGHTS = [1, 2, 3, 4, 5] # how to weigh each bucket
 
 
