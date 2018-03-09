@@ -29,7 +29,7 @@ class PHash(Classifier):
         Intake method to classify a provided candidate with an optional confidence
         :param candidate:
         :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
-        :param confidence: not used for phash classifer
+        :param confidence: a minimum confidence value that must be between 0.75 and 1.0 (inclusive)
         :return: dictionary with at the following fields
         {
             "candidate": string,
