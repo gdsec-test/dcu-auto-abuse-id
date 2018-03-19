@@ -1,6 +1,7 @@
 import logging
 import io
 import imagehash
+import math
 
 from PIL import Image
 from service.utils.urihelper import URIHelper
@@ -8,6 +9,7 @@ from service.classifiers.interface import Classifier
 from dcdatabase.mongohelper import MongoHelper
 from pymongo import ReturnDocument
 from bson.objectid import ObjectId
+from collections import defaultdict
 
 class PHash(Classifier):
 
@@ -19,14 +21,17 @@ class PHash(Classifier):
         self._logger = logging.getLogger(__name__)
         self._mongo = MongoHelper(settings)
         self._urihelper = URIHelper()
+        self._bucket_weights = settings.BUCKET_WEIGHTS
+        self._num_buckets = len(settings.BUCKET_WEIGHTS)
 
     def classify(self, candidate, url=True, confidence=0.75):
         """
         Intake method to classify a provided candidate with an optional confidence
         :param candidate:
         :param url: True if the candidate is a url else candidate is treated as a DCU Image ID
-        :param confidence: float indicating the minimum confidence for
-        consideration (Default 75% confidence)
+        :param confidence: a minimum confidence value that must be between 0.75 and 1.0 (inclusive)
+        Only matches greater than this param will be evaluated (unless this is 1.0, in which case,
+        only exact matches are evaluated)
         :return: dictionary with at the following fields
         {
             "candidate": string,
@@ -39,6 +44,11 @@ class PHash(Classifier):
             }
         }
         """
+        if (confidence <= 0.75):
+            confidence = 0.75
+        if (confidence >= 1.0):
+            confidence = 1.0
+
         return self._classify_image_id(candidate, confidence) if not url else self._classify_uri(candidate, confidence)
 
     def _classify_uri(self, uri, confidence):
@@ -51,7 +61,7 @@ class PHash(Classifier):
         doc, certainty = self._find_match(hash_candidate, confidence)
         return PHash._create_response(uri, doc, certainty)
 
-    def _classify_image_id(self, imageid, confidence=0.75):
+    def _classify_image_id(self, imageid, confidence):
         image = None
         try:
             _, image = self._mongo.get_file(imageid)
@@ -61,25 +71,69 @@ class PHash(Classifier):
         doc, certainty = self._find_match(image_hash, confidence)
         return PHash._create_response(imageid, doc, certainty)
 
-    def _find_match(self, hash_candidate, confidence):
-        res_doc = None
-        max_certainty = confidence
-        if hash_candidate:
-            for doc in self._search(hash_candidate):
-                try:
-                    doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
-                except Exception as e:
-                    self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
-                    continue
-                certainty = PHash._confidence(str(hash_candidate), str(doc_hash))
-                self._logger.info('Found candidate image: {} with certainty {}'.format(doc.get('image'), certainty))
-                if certainty >= max_certainty:
-                    self._logger.info('Found new best candidate {} with {} certainty '.format(doc.get('image'), certainty))
-                    max_certainty = certainty
-                    res_doc = doc
-                    if max_certainty == 1.0:
-                        break
-        return (res_doc, max_certainty) if res_doc else (None, None)
+    def _find_match(self, hash_candidate, min_confidence):
+        '''
+        Takes a hash, and provides a confidence rating + type/target based on
+        similar hashes, and how many times those similar hashes have been flagged,
+        using weighted averages to make the determination
+        :param hash_candidate: string of the phash to search for
+        :return Tuple: dict of type/target, and confidence rating
+        '''
+        if not hash_candidate:
+            return (None, None)
+        # Initialize bucket sets for confidence, possible targets, and abuse types
+        # allowing for multiple buckets based on malicious type
+        # i.e.: target_buckets['anything'] becomes e.g. [0, 0, 0, 0, 0] default
+        confidence_buckets = [0] * self._num_buckets
+        target_buckets = defaultdict(lambda: [0] * self._num_buckets)
+        type_buckets = defaultdict(lambda: [0] * self._num_buckets)
+        min_confidence *= 100
+        bucket_step = (100.0-min_confidence) / self._num_buckets
+        for doc in self._search(hash_candidate):
+            try:
+                doc_hash = imagehash.hex_to_hash(PHash._assemble_hash(doc))
+            except Exception as e:
+                self._logger.error('Error assembling hash for {}'.format(doc.get('_id')))
+                continue
+
+            certainty = PHash._confidence(str(hash_candidate), str(doc_hash)) * 100
+            if certainty <= min_confidence and min_confidence != 100.0:
+                continue
+            # calculate the index for the appropriate bucket
+            # e.g. 76.0 yields 0, 80 yields 1, 100 yields 4 (assuming bucket_step is 5 and min_confidence is 75)
+            bucket = 0
+            if min_confidence != 100.0:
+                bucket = int(math.ceil((certainty-min_confidence)/bucket_step))-1
+            count = doc.get('count', 1)
+            confidence_buckets[bucket] += count
+            type_buckets[doc.get('type', 'UNKNOWN')][bucket] += count
+            target_buckets[doc.get('target', 'UNKNOWN')][bucket] += count
+
+        if min_confidence == 100.0:
+            match_confidence = 1.0 if confidence_buckets[0] else 0.0
+        else:
+            match_confidence = self._weigh(confidence_buckets, min_confidence)
+                
+        res_dict = {
+            'target': self._best_bucket(target_buckets, min_confidence),
+            'type': self._best_bucket(type_buckets, min_confidence)
+        }
+        return (res_dict, match_confidence) if match_confidence else (None, None)
+
+    def _best_bucket(self, buckets, min_confidence):
+        '''
+        Takes a dict of buckets, weighs them, and returns the key for the highest-weighed bucket
+        :param buckets: A dict of buckets
+        :return String: the key for the highest-confidence bucket
+        '''
+        best_confidence = 0.0
+        match = 'UNKNOWN'
+        for key, value in buckets.iteritems():
+            confidence = self._weigh(value, min_confidence)
+            if confidence > best_confidence:
+                match = key
+                best_confidence = confidence
+        return match
 
     def add_classification(self, imageid, abuse_type, target=''):
         '''
@@ -150,6 +204,19 @@ class PHash(Classifier):
         ):
             yield doc
 
+    def _weigh(self, buckets, min_confidence):
+        confidence_over = 0.0
+        confidence_under = float(self._num_buckets)
+
+        for i in range(0, len(buckets)):
+            confidence_over += buckets[i] * self._bucket_weights[i]
+            confidence_under += buckets[i]
+        if confidence_over == 0:
+            return 0
+
+        confidence = ((confidence_over / confidence_under) * self._num_buckets) + min_confidence
+        return (confidence / 100.0)
+
     @staticmethod
     def _create_response(candidate, matching_doc, certainty):
         """
@@ -161,12 +228,9 @@ class PHash(Classifier):
         ret = PHash._get_response_dict()
         ret['candidate'] = candidate
         if matching_doc:
-            matching_hash = PHash._assemble_hash(matching_doc)
-            ret['type'] = matching_doc.get('type')
+            ret['type'] = matching_doc['type']
             ret['confidence'] = certainty
-            ret['target'] = matching_doc.get('target')
-            ret['meta']['imageId'] = str(matching_doc.get('imageId'))
-            ret['meta']['fingerprint'] = matching_hash
+            ret['target'] = matching_doc['target']
         return ret
 
     @staticmethod

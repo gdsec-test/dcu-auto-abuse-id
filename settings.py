@@ -12,6 +12,9 @@ class AppConfig(object):
     DB_HOST = 'localhost'
     COLLECTION = 'fingerprints'
     LOGGING_COLLECTION = 'logs'
+    BUCKET_WEIGHTS = [1, 2, 3, 4, 5] # how to weigh each bucket
+    # the number of buckets is derived from the number of weights
+    # the spacing between each bucket is determined by the minimum confidence requested
 
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
@@ -51,6 +54,8 @@ class TestingConfig(AppConfig):
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017
+    # Setting this again here as tests are dependent on these exact values
+    BUCKET_WEIGHTS = [1, 2, 3, 4, 5]
 
 
 config_by_name = {'dev': DevelopmentAppConfig,
