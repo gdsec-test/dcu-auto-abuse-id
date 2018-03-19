@@ -106,3 +106,26 @@ class TestRest(TestCase):
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 400)
+
+    def test_missing_auth_key(self):
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        data = dict(image_id='abc123')
+        response = self.client.post(
+            url_for('classify_image'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    def test_invalid_auth_key(self):
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        data = dict(image_id='abc123')
+        response = self.client.post(
+            url_for('classify_image'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            })
+        self.assertEqual(response.status_code, 401)

@@ -11,6 +11,7 @@ from pymongo import ReturnDocument
 from bson.objectid import ObjectId
 from collections import defaultdict
 
+
 class PHash(Classifier):
 
     def __init__(self, settings):
@@ -170,7 +171,7 @@ class PHash(Classifier):
                 'chunk4': str(image_hash)[12:16]
             },
             {
-                '$inc': { 'count': 1 },
+                '$inc': {'count': 1},
                 '$setOnInsert': {
                     'valid': 'yes',
                     'type': abuse_type,
@@ -178,8 +179,8 @@ class PHash(Classifier):
                     'imageid': ObjectId(imageid)
                 }
             },
-            upsert = True,
-            return_document = ReturnDocument.AFTER
+            upsert=True,
+            return_document=ReturnDocument.AFTER
         ):
             return True, ''
         return False, 'Unable to add or update DB for {}'.format(imageid)
