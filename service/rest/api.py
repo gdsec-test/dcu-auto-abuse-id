@@ -125,8 +125,6 @@ class IntakeImage(Resource):
     @api.marshal_with(fields_to_return, code=200)
     @api.response(200, 'Success', model=fields_to_return)
     @api.response(400, 'Validation Error')
-    @api.doc(security='apikey')
-    @token_required
     def post(self):
         """
         Submit existing DCU image ID for auto detection and classification
@@ -145,6 +143,8 @@ class AddNewImage(Resource):
     @api.expect(image_data_input)
     @api.response(201, 'Success')
     @api.response(400, 'Validation Error')
+    @api.doc(security='apikey')
+    @token_required
     def put(self):
         '''
         Add a classification for an existing DCU image
