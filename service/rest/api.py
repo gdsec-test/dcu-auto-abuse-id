@@ -79,6 +79,7 @@ def token_required(f):
             auth_token = AuthToken.parse(token, token_authority, 'jomax')
             if not set(auth_token.payload.get('groups')) & set(auth_groups):
                 return {'message': 'Unauthorized'}, 401
+            _logger.info('{}: authenticated'.format(auth_token.payload.get('accountName')))
         except Exception:
             return {'message': 'Error in authorization'}, 401
         return f(*args, **kwargs)
