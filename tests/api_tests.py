@@ -106,3 +106,30 @@ class TestRest(TestCase):
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 400)
+
+    def test_missing_auth_key(self):
+        self.client.application.config['phash'] = Mock(
+            spec=PHash, add_classification=lambda x, y, z: (True, None))
+        data = dict(image_id='someid', type='PHISHING', target='netflix')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.put(
+            url_for('add'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    def test_invalid_auth_key(self):
+        self.client.application.config['phash'] = Mock(
+            spec=PHash, add_classification=lambda x, y, z: (True, None))
+        data = dict(image_id='someid', type='PHISHING', target='netflix')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.put(
+            url_for('add'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            })
+        self.assertEqual(response.status_code, 401)

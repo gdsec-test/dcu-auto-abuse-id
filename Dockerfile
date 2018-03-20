@@ -27,7 +27,7 @@ COPY ./*.ini ./*.sh ./run.py ./encryption_helper.py ./settings.py ./*.yml /app/
 COPY . /tmp
 
 # pip install private pips staged by Makefile
-RUN for entry in blindAl dcdatabase; \
+RUN for entry in PyAuth blindAl dcdatabase; \
     do \
     pip install --compile "/tmp/private_pips/$entry"; \
     done

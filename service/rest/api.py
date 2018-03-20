@@ -3,12 +3,15 @@ from flask import request, current_app
 from flask_restplus import Namespace, Resource, fields, abort
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
+from functools import wraps
+from auth.AuthToken import AuthToken
 
 _logger = logging.getLogger(__name__)
 
+
 api = Namespace('classify',
                 title='Automated Abuse Classifier API',
-                description='Abuse classification operations'
+                description='Abuse classification operations',
                 )
 
 uri_input = api.model(
@@ -59,6 +62,28 @@ fields_to_return = api.model(
         'meta':
             fields.String(help='Additional metadata in JSON format', example='{}')
     })
+
+
+def token_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        token = None
+        auth_groups = current_app.config.get('auth_groups')
+        token_authority = current_app.config.get('token_authority')
+        if not token_authority:  # bypass if no token authority is set
+            return f(*args, **kwargs)
+        token = request.headers.get('X-API-KEY')
+        if not token:
+            return {'message': 'API token is missing'}, 401
+        try:
+            auth_token = AuthToken.parse(token, token_authority, 'jomax')
+            if not set(auth_token.payload.get('groups')) & set(auth_groups):
+                return {'message': 'Unauthorized'}, 401
+            _logger.info('{}: authenticated'.format(auth_token.payload.get('accountName')))
+        except Exception:
+            return {'message': 'Error in authorization'}, 401
+        return f(*args, **kwargs)
+    return wrapped
 
 
 @api.route('/health', endpoint='health')
@@ -119,6 +144,8 @@ class AddNewImage(Resource):
     @api.expect(image_data_input)
     @api.response(201, 'Success')
     @api.response(400, 'Validation Error')
+    @api.doc(security='apikey')
+    @token_required
     def put(self):
         '''
         Add a classification for an existing DCU image

@@ -15,6 +15,8 @@ class AppConfig(object):
     BUCKET_WEIGHTS = [1, 2, 3, 4, 5] # how to weigh each bucket
     # the number of buckets is derived from the number of weights
     # the spacing between each bucket is determined by the minimum confidence requested
+    TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
+    AUTH_GROUPS = ['DCU-Phishstory']
 
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
@@ -26,6 +28,7 @@ class ProductionAppConfig(AppConfig):
     DB = 'phishstory'
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_p_phish'
+    TOKEN_AUTHORITY = 'sso.godaddy.com'
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -35,6 +38,7 @@ class OTEAppConfig(AppConfig):
     DB = 'otephishstory'
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_o_phish'
+    TOKEN_AUTHORITY = 'sso.ote-godaddy.com'
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -56,6 +60,7 @@ class TestingConfig(AppConfig):
     DB_PORT = 27017
     # Setting this again here as tests are dependent on these exact values
     BUCKET_WEIGHTS = [1, 2, 3, 4, 5]
+    TOKEN_AUTHORITY = None  # bypass
 
 
 config_by_name = {'dev': DevelopmentAppConfig,
