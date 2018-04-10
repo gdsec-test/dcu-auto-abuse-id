@@ -30,6 +30,13 @@ image_input = api.model(
     }
 )
 
+classify_input = api.model(
+    'input', {
+        'uri': Uri(required=False, description='URI to classify'),
+        'image_id': fields.String(help='Image ID of existing DCU image', required=False, example='abc123')
+    }
+)
+
 image_data_input = api.model(
     'image_data', {
         'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
@@ -69,6 +76,49 @@ fields_to_return = api.model(
             fields.String(help='Additional metadata in JSON format', example='{}')
     })
 
+classification_resource = api.model(
+    "response", {
+        'id':
+            fields.String(
+                help='A unique ID for the task',
+                example='1234',
+                required=True
+            ),
+        'status':
+            fields.String(
+                help='The current status of the task',
+                example='PENDING',
+                required=True
+            ),
+        'confidence':
+            fields.Float(
+                help='level of confidence in the classification',
+                example=0.0,
+                required=True
+            ),
+        'target':
+            fields.String(
+                help='Brand being targeted',
+                example='NETFLIX'
+            ),
+        'candidate':
+            fields.String(
+                help='The candidate being scanned',
+                example='http://example.com',
+                required=True
+            ),
+        'meta':
+            fields.String(
+                help='Additional metadata',
+            ),
+        'type':
+            fields.String(
+                help='The type of abuse that was detected',
+                example='PHISHING',
+                required=True
+            )
+    }
+)
 
 def token_required(f):
     @wraps(f)
@@ -102,6 +152,26 @@ class Health(Resource):
         """
         return '', 200
 
+@api.route('/classification', endpoint='classification')
+class IntakeResource(Resource):
+
+    @api.expect(classify_input)
+    @api.marshal_with(fields_to_return, code=200)
+    @api.response(200, 'Success', model=fields_to_return)
+    @api.response(400, 'Validation Error')
+    def post(self):
+        """
+        Submit URI for auto detection and classification
+        Endpoint to handle intake of URIs reported as possibly containing abuse, which will then
+        be parsed and evaluated to automatically determine how closely they match existing
+        abuse fingerprints
+        """
+        payload = request.json
+        validate_payload(payload, classify_input)
+        classification_dict = current_app.config.get('phash').classify(payload.get('uri'))
+        _logger.info('{}'.format(classification_dict))
+
+        return classification_dict, 200
 
 @api.route('/submit_uri', endpoint='classify_uri')
 class IntakeURI(Resource):
