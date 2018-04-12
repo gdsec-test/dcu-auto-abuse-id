@@ -2,9 +2,11 @@ import os
 import yaml
 import logging.config
 from service.rest import create_app
+from settings import config_by_name
 
-env = os.getenv('sysenv') or 'dev'
-app = create_app(env)
+
+config = config_by_name[os.getenv('sysenv', 'dev')]()
+app = create_app(config)
 
 path = os.path.dirname(os.path.abspath(__file__)) + '/' + 'logging.yml'
 value = os.getenv('LOG_CFG', None)

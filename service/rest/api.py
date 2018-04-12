@@ -8,6 +8,10 @@ from auth.AuthToken import AuthToken
 
 _logger = logging.getLogger(__name__)
 
+# Phash celery endpoints
+PHASH_CLASSIFY_ENDPOINT = 'run.classify'
+PHASH_ADD_CLASSIFICATION_ENDPOINT = 'run.add_classification'
+
 
 api = Namespace('classify',
                 title='Automated Abuse Classifier API',
@@ -30,7 +34,9 @@ image_data_input = api.model(
     'image_data', {
         'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
         'target': fields.String(help='The brand being targeted if applicable', example='Netflix'),
-        'type': fields.String(help='Type of abuse associated with image', required=True, enum=['PHISHING', 'MALWARE', 'SPAM'])
+        'type': fields.String(help='Type of abuse associated with image', required=True, enum=['PHISHING',
+                                                                                               'MALWARE',
+                                                                                               'SPAM'])
     }
 )
 
@@ -113,7 +119,8 @@ class IntakeURI(Resource):
         """
         payload = request.json
         validate_payload(payload, uri_input)
-        classification_dict = current_app.config.get('phash').classify(payload.get('uri'))
+        classification_dict = current_app.config.get('celery').send_task(PHASH_CLASSIFY_ENDPOINT,
+                                                                         args=(payload.get('uri')))
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 200
@@ -131,8 +138,8 @@ class IntakeImage(Resource):
         Submit existing DCU image ID for auto detection and classification
         """
         payload = request.json
-        classification_dict = current_app.config.get('phash').classify(
-            payload.get('image_id'), url=False)
+        classification_dict = current_app.config.get('celery').send_task(PHASH_CLASSIFY_ENDPOINT,
+                                                                         args=(payload.get('uri')))
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 200
@@ -152,11 +159,10 @@ class AddNewImage(Resource):
         Hashes an existing DCU image for use in future classification requests
         '''
         payload = request.json
-        phash = current_app.config.get('phash')
-        success, reason = phash.add_classification(
-            payload.get('image_id'),
-            payload.get('type'),
-            payload.get('target'))
+        success, reason = current_app.config.get('celery').send_task(PHASH_ADD_CLASSIFICATION_ENDPOINT,
+                                                                     args=(payload.get('image_id'),
+                                                                           payload.get('type'),
+                                                                           payload.get('target')))
         if success:
             return '', 201
         else:
