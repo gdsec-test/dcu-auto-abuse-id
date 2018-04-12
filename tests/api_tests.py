@@ -93,7 +93,7 @@ class TestRest(TestCase):
 
     @patch.object(Celery, "send_task")
     def test_add_classification_success(self, send_task_method):
-        send_task_method.return_value = resp(None)
+        send_task_method.return_value = (True, None)
         data = dict(image_id='someid', type='PHISHING', target='netflix')
         response = self.client.put(
             url_for('add'),
