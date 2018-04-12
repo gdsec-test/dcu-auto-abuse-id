@@ -199,7 +199,7 @@ class AddNewImage(Resource):
         success, reason = phash.add_classification(
             payload.get('image_id'),
             payload.get('type'),
-            payload.get('target', None))
+            payload.get('target'))
         if success:
             return '', 201
         else:
