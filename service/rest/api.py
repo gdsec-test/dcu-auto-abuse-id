@@ -139,6 +139,7 @@ class Health(Resource):
         """
         return '', 200
 
+
 @api.route('/scan', endpoint='scan')
 class IntakeScan(Resource):
 
@@ -157,6 +158,20 @@ class IntakeScan(Resource):
         _logger.info('{}'.format(scan_dict))
 
         return scan_dict, 201
+
+
+@api.route('/scan/<string:id>', endpoint='scanresult')
+class ScanResult(Resource):
+
+    @api.marshal_with(scan_resource, code=200)
+    @api.response(200, 'Success', model=scan_resource)
+    @api.response(404, 'Invalid scan ID')
+    def get(self, id):
+        """
+        Obtain the results or status of a previously submitted scan request
+        """
+        pass
+
 
 @api.route('/classification', endpoint='classification')
 class IntakeResource(Resource):
@@ -179,6 +194,19 @@ class IntakeResource(Resource):
         _logger.info('{}'.format(classification_dict))
 
         return classification_dict, 201
+
+
+@api.route('/classification/<string:id>', endpoint='classificationresult')
+class ClassificationResult(Resource):
+
+    @api.marshal_with(classification_resource, code=200)
+    @api.response(200, 'Success', model=classification_resource)
+    @api.response(404, 'Invalid classification ID')
+    def get(self, id):
+        """
+        Obtain the results or status of a previously submitted classification request
+        """
+        pass
 
 
 @api.route('/fingerprint', endpoint='add')
