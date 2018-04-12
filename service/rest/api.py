@@ -43,7 +43,7 @@ image_data_input = api.model(
 )
 
 classification_resource = api.model(
-    "response", {
+    'response', {
         'id':
             fields.String(
                 help='A unique ID for the task',
@@ -87,7 +87,7 @@ classification_resource = api.model(
 )
 
 scan_resource = api.model(
-    "response", {
+    'response', {
         'id':
             fields.String(
                 help='A unique ID for the task',
@@ -196,10 +196,10 @@ class AddNewImage(Resource):
     @api.doc(security='apikey')
     @token_required
     def put(self):
-        '''
+        """
         Add a classification for an existing DCU image
         Hashes an existing DCU image for use in future classification requests
-        '''
+        """
         payload = request.json
         success, reason = current_app.config.get('celery').send_task(PHASH_ADD_CLASSIFICATION_ENDPOINT,
                                                                      args=(payload.get('image_id'),
