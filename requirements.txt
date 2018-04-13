@@ -1,5 +1,6 @@
 flask
 flask_restplus
+celery
 blindAl
 dcdatabase
 requests==2.13.0

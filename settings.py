@@ -12,9 +12,6 @@ class AppConfig(object):
     DB_HOST = 'localhost'
     COLLECTION = 'fingerprints'
     LOGGING_COLLECTION = 'logs'
-    BUCKET_WEIGHTS = [1, 2, 3, 4, 5] # how to weigh each bucket
-    # the number of buckets is derived from the number of weights
-    # the spacing between each bucket is determined by the minimum confidence requested
     TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
     AUTH_GROUPS = ['DCU-Phishstory']
 
@@ -29,6 +26,7 @@ class ProductionAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_p_phish'
     TOKEN_AUTHORITY = 'sso.godaddy.com'
+    PHASHQUEUE = 'phash_classify'
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -39,6 +37,7 @@ class OTEAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_o_phish'
     TOKEN_AUTHORITY = 'sso.ote-godaddy.com'
+    PHASHQUEUE = 'otephash_classify'
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -48,6 +47,7 @@ class DevelopmentAppConfig(AppConfig):
     DB = 'devphishstory'
     DB_HOST = '10.22.188.208'
     DB_USER = 'devuser'
+    PHASHQUEUE = 'devphash_classify'
 
     def __init__(self):
         super(DevelopmentAppConfig, self).__init__()
@@ -58,9 +58,8 @@ class TestingConfig(AppConfig):
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017
-    # Setting this again here as tests are dependent on these exact values
-    BUCKET_WEIGHTS = [1, 2, 3, 4, 5]
-    TOKEN_AUTHORITY = None  # bypass
+    TOKEN_AUTHORITY = 'placeholder'  # bypass
+    PHASHQUEUE = 'placeholder'
 
 
 config_by_name = {'dev': DevelopmentAppConfig,
