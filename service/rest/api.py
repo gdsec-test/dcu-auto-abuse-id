@@ -18,15 +18,17 @@ api = Namespace('classify',
                 description='Abuse classification operations',
                 )
 
-uri_input = api.model(
-    'uri', {
-        'uri': Uri(required=True, description='URI to classify')
+scan_input = api.model(
+    'scan_input', {
+        'uri': Uri(required=True, description='URI to scan'),
+        'sitemap': fields.Boolean(help='True if the URI represents a sitemap', required=False)
     }
 )
 
-image_input = api.model(
-    'image_id', {
-        'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
+classify_input = api.model(
+    'input', {
+        'uri': Uri(required=False, description='URI to classify'),
+        'image_id': fields.String(help='Image ID of existing DCU image', required=False, example='abc123')
     }
 )
 
@@ -40,35 +42,76 @@ image_data_input = api.model(
     }
 )
 
-fields_to_return = api.model(
+classification_resource = api.model(
     'response', {
-        'target':
-            fields.String(help='The Target of the abuse', example='netflix'),
-        'candidate':
+        'id':
             fields.String(
-                help='The candidate used for classification', example='http://website.com OR abc123'),
-        'type':
-            fields.String(
-                help='The abuse type category',
-                example='PHISHING',
-                enum=['PHISHING', 'MALWARE', 'SPAM', 'UNKNOWN'],
-                required=True),
-        'confidence':
-            fields.Float(
-                help='A confidence score of 1 indicates an exact match, while 0 indicates no match',
-                example=96.5,
+                help='A unique ID for the task',
+                example='1234',
                 required=True
             ),
-        'method':
+        'status':
             fields.String(
-                help='The method used to obtain the confidence score.  Currently only: pHash',
-                example='pHash',
+                help='The current status of the task',
+                enum=['PENDING', 'STARTED', 'COMPLETE'],
+                required=True
+            ),
+        'confidence':
+            fields.Float(
+                help='level of confidence in the classification',
+                example=0.0,
+                required=True
+            ),
+        'target':
+            fields.String(
+                help='Brand being targeted',
+                example='NETFLIX'
+            ),
+        'candidate':
+            fields.String(
+                help='The candidate being scanned',
+                example='http://example.com',
                 required=True
             ),
         'meta':
-            fields.String(help='Additional metadata in JSON format', example='{}')
-    })
+            fields.String(
+                help='Additional metadata',
+            ),
+        'type':
+            fields.String(
+                help='The type of abuse that was detected',
+                required=True,
+                enum=['PHISHING', 'MALWARE', 'SPAM', 'UNKNOWN']
+            )
+    }
+)
 
+scan_resource = api.model(
+    'response', {
+        'id':
+            fields.String(
+                help='A unique ID for the task',
+                example='1234',
+                required=True
+            ),
+        'status':
+            fields.String(
+                help='The current status of the task',
+                enum=['PENDING', 'STARTED', 'COMPLETE'],
+                required=True
+            ),
+        'uri':
+            Uri(
+                description='URL scanned',
+                required=True
+            ),
+        'sitemap':
+            fields.Boolean(
+                help='True if the URI represents the location of a sitemap',
+                required=True
+            )
+    }
+)
 
 def token_required(f):
     @wraps(f)
@@ -103,12 +146,44 @@ class Health(Resource):
         return '', 200
 
 
-@api.route('/submit_uri', endpoint='classify_uri')
-class IntakeURI(Resource):
+@api.route('/scan', endpoint='scan')
+class IntakeScan(Resource):
 
-    @api.expect(uri_input)
-    @api.marshal_with(fields_to_return, code=200)
-    @api.response(200, 'Success', model=fields_to_return)
+    @api.expect(scan_input)
+    @api.marshal_with(scan_resource, code=201)
+    @api.response(201, 'Success', model=scan_resource)
+    @api.response(400, 'Validation Error')
+    def post(self):
+        """
+        Submit URI for scanning and potential Abuse API ticket creation
+        """
+        payload = request.json
+        validate_payload(payload, scan_input)
+        # Code to send off to celery goes here
+        scan_dict = None
+        _logger.info('{}'.format(scan_dict))
+
+        return scan_dict, 201
+
+@api.route('/scan/<string:id>', endpoint='scanresult')
+class ScanResult(Resource):
+
+    @api.marshal_with(scan_resource, code=200)
+    @api.response(200, 'Success', model=scan_resource)
+    @api.response(404, 'Invalid scan ID')
+    def get(self, id):
+        """
+        Obtain the results or status of a previously submitted scan request
+        """
+        pass
+
+
+@api.route('/classification', endpoint='classification')
+class IntakeResource(Resource):
+
+    @api.expect(classify_input)
+    @api.marshal_with(classification_resource, code=201)
+    @api.response(201, 'Success', model=classification_resource)
     @api.response(400, 'Validation Error')
     def post(self):
         """
@@ -118,34 +193,28 @@ class IntakeURI(Resource):
         abuse fingerprints
         """
         payload = request.json
-        validate_payload(payload, uri_input)
-        classification_dict = current_app.config.get('celery').send_task(PHASH_CLASSIFY_ENDPOINT,
-                                                                         args=(payload.get('uri')))
+        validate_payload(payload, classify_input)
+        # Code to send off to celery goes here
+        classification_dict = None
         _logger.info('{}'.format(classification_dict))
 
-        return classification_dict, 200
+        return classification_dict, 201
 
 
-@api.route('/submit_image', endpoint='classify_image')
-class IntakeImage(Resource):
+@api.route('/classification/<string:id>', endpoint='classificationresult')
+class ClassificationResult(Resource):
 
-    @api.expect(image_input)
-    @api.marshal_with(fields_to_return, code=200)
-    @api.response(200, 'Success', model=fields_to_return)
-    @api.response(400, 'Validation Error')
-    def post(self):
+    @api.marshal_with(classification_resource, code=200)
+    @api.response(200, 'Success', model=classification_resource)
+    @api.response(404, 'Invalid classification ID')
+    def get(self, id):
         """
-        Submit existing DCU image ID for auto detection and classification
+        Obtain the results or status of a previously submitted classification request
         """
-        payload = request.json
-        classification_dict = current_app.config.get('celery').send_task(PHASH_CLASSIFY_ENDPOINT,
-                                                                         args=(payload.get('uri')))
-        _logger.info('{}'.format(classification_dict))
-
-        return classification_dict, 200
+        pass
 
 
-@api.route('/add_classification', endpoint='add')
+@api.route('/fingerprint', endpoint='add')
 class AddNewImage(Resource):
 
     @api.expect(image_data_input)
@@ -154,10 +223,10 @@ class AddNewImage(Resource):
     @api.doc(security='apikey')
     @token_required
     def put(self):
-        '''
+        """
         Add a classification for an existing DCU image
         Hashes an existing DCU image for use in future classification requests
-        '''
+        """
         payload = request.json
         success, reason = current_app.config.get('celery').send_task(PHASH_ADD_CLASSIFICATION_ENDPOINT,
                                                                      args=(payload.get('image_id'),
