@@ -165,7 +165,6 @@ class IntakeScan(Resource):
 
         return scan_dict, 201
 
-
 @api.route('/scan/<string:id>', endpoint='scanresult')
 class ScanResult(Resource):
 
