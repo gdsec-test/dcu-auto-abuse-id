@@ -19,8 +19,7 @@ class CeleryConfig:
     CELERY_TRACK_STARTED = True
 
     @staticmethod
-    def _getqueues():
-        env = os.getenv('sysenv')
+    def _getqueues(env):
         queue_modifier = ''
         exchange = 'classifier'
         if env != 'prod':
@@ -36,8 +35,7 @@ class CeleryConfig:
         )
 
     @staticmethod
-    def _getroutes():
-        env = os.getenv('sysenv')
+    def _getroutes(env):
         queue_modifier = ''
         if env != 'prod':
             queue_modifier = env
@@ -56,5 +54,6 @@ class CeleryConfig:
             'database': settings.DB,
             'taskmeta_collection': 'classifier-celery'
         }
-        self.CELERY_QUEUES = CeleryConfig._getqueues()
-        self.CELERY_ROUTES = CeleryConfig._getroutes()
+        env = os.getenv('sysenv', 'test')
+        self.CELERY_QUEUES = CeleryConfig._getqueues(env)
+        self.CELERY_ROUTES = CeleryConfig._getroutes(env)
