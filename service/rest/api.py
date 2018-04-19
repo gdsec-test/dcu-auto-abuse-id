@@ -43,7 +43,7 @@ image_data_input = api.model(
 )
 
 classification_resource = api.model(
-    'response', {
+    'classification_response', {
         'id':
             fields.String(
                 help='A unique ID for the task',
@@ -75,7 +75,7 @@ classification_resource = api.model(
             ),
         'meta':
             fields.String(
-                help='Additional metadata',
+                help='Additional metadata'
             ),
         'type':
             fields.String(
@@ -87,7 +87,7 @@ classification_resource = api.model(
 )
 
 scan_resource = api.model(
-    'response', {
+    'scan_response', {
         'id':
             fields.String(
                 help='A unique ID for the task',
