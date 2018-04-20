@@ -5,7 +5,6 @@ from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
 from functools import wraps
 from auth.AuthToken import AuthToken
-from collections import namedtuple
 
 _logger = logging.getLogger(__name__)
 
