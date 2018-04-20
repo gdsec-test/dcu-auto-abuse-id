@@ -7,6 +7,7 @@ from celery import Celery
 # from mock import Mock
 from flask_testing.utils import TestCase
 from settings import config_by_name
+from collections import namedtuple
 
 
 def resp(candidate, url=True):
@@ -29,20 +30,20 @@ class TestRest(TestCase):
 
     @patch.object(Celery, "send_task")
     def test_classify_uri_success(self, send_task_method):
-        send_task_method.return_value = resp(None)
+        send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
         data = dict(uri='https://localhost.com')
         response = self.client.post(
-            url_for('classify_uri'),
+            url_for('classification'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
             })
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
-    def test_classify_bad_uri_request(self):
-        data = dict()
+    def test_classify_invalid_request(self):
+        data = dict(uri='http://localhost', image_id='blah')
         response = self.client.post(
-            url_for('classify_uri'),
+            url_for('classification'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
@@ -52,7 +53,7 @@ class TestRest(TestCase):
     def test_classify_invalid_uri(self):
         data = dict(uri='http://localhost')
         response = self.client.post(
-            url_for('classify_uri'),
+            url_for('classification'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
@@ -61,39 +62,19 @@ class TestRest(TestCase):
 
     @patch.object(Celery, "send_task")
     def test_classify_image_success(self, send_task_method):
-        send_task_method.return_value = resp(None)
+        send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
         data = dict(image_id='abc123')
         response = self.client.post(
-            url_for('classify_image'),
+            url_for('classification'),
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json'
             })
-        self.assertEqual(response.status_code, 200)
-
-    def test_classify_bad_image_request(self):
-        data = dict()
-        response = self.client.post(
-            url_for('classify_image'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 400)
-
-    def test_classify_invalid_image_id(self):
-        data = dict(image_id=12345)
-        response = self.client.post(
-            url_for('classify_image'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 201)
 
     @patch.object(Celery, "send_task")
     def test_add_classification_success(self, send_task_method):
-        send_task_method.return_value = (True, None)
+        send_task_method.return_value = True
         data = dict(image_id='someid', type='PHISHING', target='netflix')
         response = self.client.put(
             url_for('add'),

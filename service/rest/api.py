@@ -5,12 +5,13 @@ from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
 from functools import wraps
 from auth.AuthToken import AuthToken
+from collections import namedtuple
 
 _logger = logging.getLogger(__name__)
 
 # Phash celery endpoints
-PHASH_CLASSIFY_ENDPOINT = 'run.classify'
-PHASH_ADD_CLASSIFICATION_ENDPOINT = 'run.add_classification'
+CLASSIFY_ROUTE = 'classify.request'
+FINGERPRINT_ROUTE = 'fingerprint.request'
 
 
 api = Namespace('classify',
@@ -60,7 +61,8 @@ classification_resource = api.model(
             fields.Float(
                 help='level of confidence in the classification',
                 example=0.0,
-                required=True
+                required=True,
+                default=0.0
             ),
         'target':
             fields.String(
@@ -112,6 +114,7 @@ scan_resource = api.model(
             )
     }
 )
+
 
 def token_required(f):
     @wraps(f)
@@ -165,6 +168,7 @@ class IntakeScan(Resource):
 
         return scan_dict, 201
 
+
 @api.route('/scan/<string:id>', endpoint='scanresult')
 class ScanResult(Resource):
 
@@ -194,11 +198,16 @@ class IntakeResource(Resource):
         """
         payload = request.json
         validate_payload(payload, classify_input)
-        # Code to send off to celery goes here
-        classification_dict = None
-        _logger.info('{}'.format(classification_dict))
-
-        return classification_dict, 201
+        uri = payload.get('uri')
+        image = payload.get('image_id')
+        if uri and image:
+            abort(400, 'uri and image are mutually exclusive')
+        else:
+            candidate = uri if uri else image
+            result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
+            classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
+            _logger.info('{}'.format(classification_resp))
+            return classification_resp, 201
 
 
 @api.route('/classification/<string:id>', endpoint='classificationresult')
@@ -211,7 +220,14 @@ class ClassificationResult(Resource):
         """
         Obtain the results or status of a previously submitted classification request
         """
-        pass
+        asyn_res = current_app.config.get('celery').AsyncResult(id)
+        status = asyn_res.state
+        if asyn_res.ready():
+            res = asyn_res.get()
+            res['status'] = status
+            return res
+        else:
+            return dict(id=id, status=status)
 
 
 @api.route('/fingerprint', endpoint='add')
@@ -228,11 +244,5 @@ class AddNewImage(Resource):
         Hashes an existing DCU image for use in future classification requests
         """
         payload = request.json
-        success, reason = current_app.config.get('celery').send_task(PHASH_ADD_CLASSIFICATION_ENDPOINT,
-                                                                     args=(payload.get('image_id'),
-                                                                           payload.get('type'),
-                                                                           payload.get('target')))
-        if success:
-            return '', 201
-        else:
-            abort(500, reason)
+        result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
+        return None, 201
