@@ -202,7 +202,7 @@ class IntakeResource(Resource):
         if uri and image:
             abort(400, 'uri and image are mutually exclusive')
         else:
-            candidate = uri if uri else image
+            candidate = uri or image
             result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
             classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
             _logger.info('{}'.format(classification_resp))
