@@ -1,4 +1,5 @@
 import logging
+import json
 from flask import request, current_app
 from flask_restplus import Namespace, Resource, fields, abort
 from service.rest.custom_fields import Uri
@@ -205,10 +206,10 @@ class IntakeResource(Resource):
             candidate = uri or image
             cache = current_app.config.get('cache')
             if cache.get(candidate):
-                return cache.get(candidate), 201
+                return json.loads(cache.get(candidate)), 201
             result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
             classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
-            cache.add(candidate, classification_resp, ttl=1800)
+            cache.add(candidate, json.dumps(classification_resp), ttl=1800)
             _logger.info('{}'.format(classification_resp))
             return classification_resp, 201
 
@@ -225,13 +226,13 @@ class ClassificationResult(Resource):
         """
         cache = current_app.config.get('cache')
         if cache.get(jid):
-            return cache.get(jid)
-        asyn_res = current_app.config.get('celery').AsyncResult(id)
+            return json.loads(cache.get(jid))
+        asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
             res['status'] = status
-            cache.add(jid, res, ttl=86400)
+            cache.add(jid, json.dumps(res), ttl=86400)
             return res
         else:
             return dict(id=id, status=status)
