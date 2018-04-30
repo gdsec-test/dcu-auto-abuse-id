@@ -10,8 +10,7 @@ class RedisCache(Cache):
         try:
             self._redis = Redis(connection_str)
         except Exception as e:
-            self._logger.fatal("Error in creating redis connection: %s",
-                               e.message)
+            self._logger.fatal('Error in creating redis connection: {}'.format(e.message))
 
     def get(self, redis_key):
         try:

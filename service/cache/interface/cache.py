@@ -3,7 +3,7 @@ import abc
 
 class Cache(object):
     """
-    Abstract base class for cacheing data
+    Abstract base class for caching data
     """
     __metaclass__ = abc.ABCMeta
 

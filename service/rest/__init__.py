@@ -31,7 +31,6 @@ def create_app(config):
     celery = Celery()
     celery.config_from_object(CeleryConfig(config))
     app.config['celery'] = celery
-    cache = RedisCache(config.CACHE_SERVICE)
-    app.config['cache'] = cache
+    app.config['cache'] = RedisCache(config.CACHE_SERVICE)
     api.add_namespace(ns1)
     return app
