@@ -203,27 +203,35 @@ class IntakeResource(Resource):
             abort(400, 'uri and image are mutually exclusive')
         else:
             candidate = uri or image
+            cache = current_app.config.get('cache')
+            if cache.get(candidate):
+                return cache.get(candidate), 201
             result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
             classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
+            cache.add(candidate, classification_resp, ttl=1800)
             _logger.info('{}'.format(classification_resp))
             return classification_resp, 201
 
 
-@api.route('/classification/<string:id>', endpoint='classificationresult')
+@api.route('/classification/<string:jid>', endpoint='classificationresult')
 class ClassificationResult(Resource):
 
     @api.marshal_with(classification_resource, code=200)
     @api.response(200, 'Success', model=classification_resource)
     @api.response(404, 'Invalid classification ID')
-    def get(self, id):
+    def get(self, jid):
         """
         Obtain the results or status of a previously submitted classification request
         """
+        cache = current_app.config.get('cache')
+        if cache.get(jid):
+            return cache.get(jid)
         asyn_res = current_app.config.get('celery').AsyncResult(id)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
             res['status'] = status
+            cache.add(jid, res, ttl=86400)
             return res
         else:
             return dict(id=id, status=status)

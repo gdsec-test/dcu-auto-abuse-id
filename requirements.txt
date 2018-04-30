@@ -9,3 +9,4 @@ ImageHash==4.0
 pyyaml
 uwsgi==2.0.15
 PyAuth==5.0.1
+redis

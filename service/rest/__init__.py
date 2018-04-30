@@ -3,6 +3,7 @@ from flask_restplus import Api
 from .api import api as ns1
 from celery import Celery
 from celeryconfig import CeleryConfig
+from service.cache.redis_cache import RedisCache
 
 
 def create_app(config):
@@ -30,5 +31,7 @@ def create_app(config):
     celery = Celery()
     celery.config_from_object(CeleryConfig(config))
     app.config['celery'] = celery
+    cache = RedisCache(config.CACHE_SERVICE)
+    app.config['cache'] = cache
     api.add_namespace(ns1)
     return app
