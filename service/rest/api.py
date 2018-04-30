@@ -205,8 +205,9 @@ class IntakeResource(Resource):
         else:
             candidate = uri or image
             cache = current_app.config.get('cache')
-            if cache.get(candidate):
-                return json.loads(cache.get(candidate)), 201
+            cached_val = cache.get(candidate)
+            if cached_val:
+                return json.loads(cached_val), 201
             result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
             classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
             cache.add(candidate, json.dumps(classification_resp), ttl=1800)
@@ -225,8 +226,9 @@ class ClassificationResult(Resource):
         Obtain the results or status of a previously submitted classification request
         """
         cache = current_app.config.get('cache')
-        if cache.get(jid):
-            return json.loads(cache.get(jid))
+        cached_val = cache.get(jid)
+        if cached_val:
+            return json.loads(cached_val)
         asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
