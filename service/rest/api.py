@@ -23,7 +23,7 @@ api = Namespace('classify',
 scan_input = api.model(
     'scan_input', {
         'uri': Uri(required=True, description='URI to scan'),
-        'sitemap': fields.Boolean(help='True if the URI represents a sitemap', required=False)
+        'sitemap': fields.Boolean(help='True if the URI represents a sitemap', required=False, default=False)
     }
 )
 
@@ -173,8 +173,8 @@ class IntakeScan(Resource):
             return json.loads(cached_val), 201
 
         result = current_app.config.get('celery').send_task(SCAN_ROUTE, args=(payload,))
-        scan_resp = dict(id=result.id, status='PENDING', uri=uri)
-        cache.add(uri, json.dumps(scan_resp), ttl=1800)
+        scan_resp = dict(id=result.id, status='PENDING', uri=uri, sitemap=payload.get('sitemap'))
+        cache.add(uri, json.dumps(scan_resp), ttl=86400)
         _logger.info('{}'.format(scan_resp))
 
         return scan_resp, 201
