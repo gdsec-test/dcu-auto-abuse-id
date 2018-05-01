@@ -2,7 +2,7 @@ import re
 
 from flask_restplus.fields import Raw
 
-URI_REGEX = re.compile(r'(http|https|ftp)://\S+\.\S+')
+URI_REGEX = re.compile(r'(http|https|ftp)://\S+\.\S+', flags=re.IGNORECASE)
 
 
 class CustomField(Raw):

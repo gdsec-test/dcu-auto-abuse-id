@@ -1,4 +1,4 @@
-# auto_abuse_id
+# Auto Abuse ID
 Project to programmatically identify which content is abusive
 
  ## Cloning
@@ -47,7 +47,7 @@ pip install -r requirements.txt
  Optionally, you may provide the flags `--with-coverage --cover-package=service/` to `nosetests` to determine the test coverage of the project.
 
  ## Built With
- DMV is built utilizing the following key technologies
+ Auto Abuse ID is built utilizing the following key technologies
  1. BlindAl
  2. dcdatabase
  
