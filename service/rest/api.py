@@ -10,6 +10,7 @@ _logger = logging.getLogger(__name__)
 
 # Phash celery endpoints
 CLASSIFY_ROUTE = 'classify.request'
+SCAN_ROUTE = 'scan.request'
 FINGERPRINT_ROUTE = 'fingerprint.request'
 
 
@@ -118,14 +119,16 @@ scan_resource = api.model(
 def token_required(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        token = None
         auth_groups = current_app.config.get('auth_groups')
         token_authority = current_app.config.get('token_authority')
+
         if not token_authority:  # bypass if no token authority is set
             return f(*args, **kwargs)
+
         token = request.headers.get('X-API-KEY')
         if not token:
             return {'message': 'API token is missing'}, 401
+
         try:
             auth_token = AuthToken.parse(token, token_authority, 'jomax')
             if not set(auth_token.payload.get('groups')) & set(auth_groups):
@@ -161,11 +164,12 @@ class IntakeScan(Resource):
         """
         payload = request.json
         validate_payload(payload, scan_input)
-        # Code to send off to celery goes here
-        scan_dict = None
-        _logger.info('{}'.format(scan_dict))
 
-        return scan_dict, 201
+        result = current_app.config.get('celery').send_task(SCAN_ROUTE, args=(payload,))
+        scan_resp = dict(id=result.id, status='PENDING')
+        _logger.info('{}'.format(scan_resp))
+
+        return scan_resp, 201
 
 
 @api.route('/scan/<string:id>', endpoint='scanresult')
@@ -178,7 +182,14 @@ class ScanResult(Resource):
         """
         Obtain the results or status of a previously submitted scan request
         """
-        pass
+        asyn_res = current_app.config.get('celery').AsyncResult(id)
+        status = asyn_res.state
+        if asyn_res.ready():
+            res = asyn_res.get()
+            res['status'] = status
+            return res
+
+        return dict(id=id, status=status)
 
 
 @api.route('/classification', endpoint='classification')
@@ -225,8 +236,8 @@ class ClassificationResult(Resource):
             res = asyn_res.get()
             res['status'] = status
             return res
-        else:
-            return dict(id=id, status=status)
+
+        return dict(id=id, status=status)
 
 
 @api.route('/fingerprint', endpoint='add')
