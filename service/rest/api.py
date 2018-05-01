@@ -166,31 +166,44 @@ class IntakeScan(Resource):
         payload = request.json
         validate_payload(payload, scan_input)
 
+        uri = payload.get('uri')
+        cache = current_app.config.get('cache')
+        cached_val = cache.get(uri)
+        if cached_val:
+            return json.loads(cached_val), 201
+
         result = current_app.config.get('celery').send_task(SCAN_ROUTE, args=(payload,))
-        scan_resp = dict(id=result.id, status='PENDING')
+        scan_resp = dict(id=result.id, status='PENDING', uri=uri)
+        cache.add(uri, json.dumps(scan_resp), ttl=1800)
         _logger.info('{}'.format(scan_resp))
 
         return scan_resp, 201
 
 
-@api.route('/scan/<string:id>', endpoint='scanresult')
+@api.route('/scan/<string:jid>', endpoint='scanresult')
 class ScanResult(Resource):
 
     @api.marshal_with(scan_resource, code=200)
     @api.response(200, 'Success', model=scan_resource)
     @api.response(404, 'Invalid scan ID')
-    def get(self, id):
+    def get(self, jid):
         """
         Obtain the results or status of a previously submitted scan request
         """
-        asyn_res = current_app.config.get('celery').AsyncResult(id)
+        cache = current_app.config.get('cache')
+        cached_val = cache.get(jid)
+        if cached_val:
+            return json.loads(cached_val)
+
+        asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
             res['status'] = status
+            cache.add(jid, json.dumps(res), ttl=86400)
             return res
 
-        return dict(id=id, status=status)
+        return dict(id=jid, status=status)
 
 
 @api.route('/classification', endpoint='classification')
@@ -209,21 +222,24 @@ class IntakeResource(Resource):
         """
         payload = request.json
         validate_payload(payload, classify_input)
+
         uri = payload.get('uri')
         image = payload.get('image_id')
         if uri and image:
             abort(400, 'uri and image are mutually exclusive')
-        else:
-            candidate = uri or image
-            cache = current_app.config.get('cache')
-            cached_val = cache.get(candidate)
-            if cached_val:
-                return json.loads(cached_val), 201
-            result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
-            classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
-            cache.add(candidate, json.dumps(classification_resp), ttl=1800)
-            _logger.info('{}'.format(classification_resp))
-            return classification_resp, 201
+
+        candidate = uri or image
+        cache = current_app.config.get('cache')
+        cached_val = cache.get(candidate)
+        if cached_val:
+            return json.loads(cached_val), 201
+
+        result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
+        classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
+        cache.add(candidate, json.dumps(classification_resp), ttl=1800)
+        _logger.info('{}'.format(classification_resp))
+
+        return classification_resp, 201
 
 
 @api.route('/classification/<string:jid>', endpoint='classificationresult')
@@ -240,6 +256,7 @@ class ClassificationResult(Resource):
         cached_val = cache.get(jid)
         if cached_val:
             return json.loads(cached_val)
+
         asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
@@ -248,7 +265,7 @@ class ClassificationResult(Resource):
             cache.add(jid, json.dumps(res), ttl=86400)
             return res
 
-        return dict(id=id, status=status)
+        return dict(id=jid, status=status)
 
 
 @api.route('/fingerprint', endpoint='add')
