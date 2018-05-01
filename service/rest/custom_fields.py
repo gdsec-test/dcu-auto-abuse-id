@@ -1,5 +1,5 @@
 import re
-import logging
+
 from flask_restplus.fields import Raw
 
 URI_REGEX = re.compile(r'(http|https|ftp)://\S+\.\S+')

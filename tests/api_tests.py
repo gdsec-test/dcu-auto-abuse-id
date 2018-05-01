@@ -1,14 +1,14 @@
 import json
-import mock
-from mock import patch, MagicMock
-import service.rest
-from flask import url_for
-from celery import Celery
-# from mock import Mock
-from flask_testing.utils import TestCase
-from settings import config_by_name
 from collections import namedtuple
+
+from celery import Celery
+from flask import url_for
+from flask_testing.utils import TestCase
+from mock import patch, MagicMock
+
+import service.rest
 from mock_redis import MockRedis
+from settings import config_by_name
 
 
 def resp(candidate, url=True):
