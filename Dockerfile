@@ -10,7 +10,6 @@ RUN groupadd -r dcu && useradd -r -m -g dcu dcu
 # apt-get installs
 RUN apt-get update && \
     apt-get install -y build-essential \
-    fontconfig \
     gcc \
     libffi-dev \
     libssl-dev \
