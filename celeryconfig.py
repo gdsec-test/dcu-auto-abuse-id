@@ -26,12 +26,12 @@ class CeleryConfig:
             queue_modifier = env
             exchange = env + exchange
         return (
-            Queue(queue_modifier+'fingerprint_tasks',   exchange=Exchange(exchange, type='topic'),
-                    routing_key='fingerprint.request'),
-            Queue(queue_modifier+'classify_tasks',   exchange=Exchange(exchange, type='topic'),
-                    routing_key='classify.request'),
-            Queue(queue_modifier+'scan_tasks',   exchange=Exchange(exchange, type='topic'),
-                    routing_key='scan.request')
+            Queue(queue_modifier + 'fingerprint_tasks', exchange=Exchange(exchange, type='topic'),
+                  routing_key='fingerprint.request'),
+            Queue(queue_modifier + 'classify_tasks', exchange=Exchange(exchange, type='topic'),
+                  routing_key='classify.request'),
+            Queue(queue_modifier + 'scan_tasks', exchange=Exchange(exchange, type='topic'),
+                  routing_key='scan.request')
         )
 
     @staticmethod
@@ -41,7 +41,8 @@ class CeleryConfig:
             queue_modifier = env
         return {
             'classify.request': {'queue': queue_modifier + 'classify_tasks', 'routing_key': 'classify.request'},
-            'fingerprint.request': {'queue': queue_modifier + 'fingerprint_tasks', 'routing_key': 'fingerprint.request'},
+            'fingerprint.request': {'queue': queue_modifier + 'fingerprint_tasks',
+                                    'routing_key': 'fingerprint.request'},
             'scan.request': {'queue': queue_modifier + 'scan_tasks', 'routing_key': 'scan.request'}
         }
 

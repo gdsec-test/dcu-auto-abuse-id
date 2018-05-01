@@ -61,11 +61,11 @@ records_to_review = None
 
 
 def get_header(h3=None):
-    '''
+    """
     Just a hack to avoid having to create an HTML template
     :param h3:
     :return: html string
-    '''
+    """
     header = ''
     if h3:
         header = '<h3>{}</h3>'.format(h3)
@@ -73,10 +73,10 @@ def get_header(h3=None):
 
 
 def get_footer():
-    '''
+    """
     Just a hack to avoid having to create an HTML template
     :return: html string
-    '''
+    """
     return '</table></body></html>'
 
 
@@ -84,10 +84,10 @@ def get_footer():
 
 
 def get_records():
-    '''
+    """
     Returns a cursor object of all images in fingerprints collection that has no `valid` field
     :return: Pymongo Cursor Object or False
-    '''
+    """
     results = local_collection.find({'valid': {'$exists': False}}).limit(1)
     if results:
         return results
@@ -96,20 +96,20 @@ def get_records():
 
 @app.route("/favicon.ico")
 def favicon():
-    '''
+    """
     For the annoying calls to: "GET /favicon.ico HTTP/1.1"
     :return empty string:
-    '''
+    """
     return ''
 
 
 @app.route("/")
 def get_one_record(action_taken=None):
-    '''
+    """
     Endpoint for visually validating new images added to collection
     :param action_taken:
     :return: html string
-    '''
+    """
     try:
         doc = get_records().next()
         if doc:
@@ -128,23 +128,23 @@ def get_one_record(action_taken=None):
 
 @app.route("/<string:action_taken>")
 def get_next_record(action_taken):
-    '''
+    """
     Endpoint that is called when a visual validation has been made on a new image, used to populate the
      `action_taken` message at the top of the page
     :param action_taken:
     :return:
-    '''
+    """
     return get_one_record(action_taken)
 
 
 @app.route("/verify/<string:yes_no_maybeso>/<string:image_id>/")
 def verify(yes_no_maybeso, image_id):
-    '''
+    """
     Endpoint that updates new fingerprint record with a visual validation status (yes/no/inconclusive)
     :param yes_no_maybeso:
     :param image_id:
     :return: html string
-    '''
+    """
     action_taken = 'You chose {} for imageId {}'.format(yes_no_maybeso, image_id)
     local_collection.update({'imageId': ObjectId(image_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
     return get_next_record(action_taken)
@@ -154,20 +154,20 @@ def verify(yes_no_maybeso, image_id):
 
 
 def get_specific_records(yes_no_maybeso):
-    '''
+    """
     Returns a cursor object of all images in fingerprints collection that has has a specific value for `valid`
     :param yes_no_maybeso:
     :return: Pymongo Cursor Object
-    '''
+    """
     return local_collection.find({'valid': yes_no_maybeso})
 
 
 def get_records_to_review(yes_no_maybeso):
-    '''
+    """
     Sets the global `records_to_review` variable if it is not already set
     :param yes_no_maybeso:
     :return:
-    '''
+    """
     global records_to_review
     if not records_to_review:
         records_to_review = get_specific_records(yes_no_maybeso)
@@ -176,12 +176,12 @@ def get_records_to_review(yes_no_maybeso):
 
 @app.route("/review/<string:yes_no_maybeso>/<string:image_id>/")
 def review_change_verify(yes_no_maybeso, image_id):
-    '''
+    """
     Endpoint that updates existing fingerprint record with a visual validation status (yes/no/inconclusive)
     :param yes_no_maybeso:
     :param image_id:
     :return: html string
-    '''
+    """
     action_taken = 'You chose {} for {}'.format(yes_no_maybeso, image_id)
     local_collection.update({'imageId': ObjectId(image_id)}, {'$set': {'valid': yes_no_maybeso, 'validator': user}})
     return review_records(yes_no_maybeso, action_taken)
@@ -189,12 +189,12 @@ def review_change_verify(yes_no_maybeso, image_id):
 
 @app.route("/review")
 def review(message=None):
-    '''
+    """
     Endpoint that presents user with links in order to review existing record's visual validation
     status (yes/no/inconclusive)
     :param message:
     :return:
-    '''
+    """
     global records_to_review
     records_to_review = None
     html = get_header(message)
@@ -207,13 +207,13 @@ def review(message=None):
 
 @app.route("/review/<string:yes_no_maybeso>")
 def review_records(yes_no_maybeso, action_taken=None):
-    '''
+    """
     Endpoint that presents user with a specific fingerprint record, allowing them to move to the next
     record, or allowing them to change the visual validation status (yes/no/inconclusive)
     :param yes_no_maybeso:
     :param action_taken:
     :return:
-    '''
+    """
     try:
         doc = get_records_to_review(yes_no_maybeso).next()
         if doc:

@@ -10,17 +10,12 @@ RUN groupadd -r dcu && useradd -r -m -g dcu dcu
 # apt-get installs
 RUN apt-get update && \
     apt-get install -y build-essential \
-    fontconfig \
     gcc \
     libffi-dev \
     libssl-dev \
     python-dev \
     python-pip \
     curl
-
-RUN cd /usr/local/share && \
-    curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj && \
-    ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs
 
 COPY ./*.ini ./*.sh ./run.py ./celeryconfig.py ./encryption_helper.py ./settings.py ./*.yml /app/
 
