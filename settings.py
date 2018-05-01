@@ -55,7 +55,8 @@ class TestingConfig(AppConfig):
     COLLECTION = 'test'
     DB_HOST = 'localhost'
     DB_PORT = 27017
-    TOKEN_AUTHORITY = 'placeholder'  # bypass
+    TOKEN_AUTHORITY = None
+    CACHE_SERVICE = 'localhost'
 
 
 config_by_name = {'dev': DevelopmentAppConfig,
