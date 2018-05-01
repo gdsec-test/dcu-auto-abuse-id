@@ -18,10 +18,6 @@ RUN apt-get update && \
     python-pip \
     curl
 
-RUN cd /usr/local/share && \
-    curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xj && \
-    ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs
-
 COPY ./*.ini ./*.sh ./run.py ./celeryconfig.py ./encryption_helper.py ./settings.py ./*.yml /app/
 
 COPY . /tmp
