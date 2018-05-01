@@ -237,7 +237,7 @@ class ClassificationResult(Resource):
             cache.add(jid, json.dumps(res), ttl=86400)
             return res
         else:
-            return dict(id=id, status=status)
+            return dict(id=jid, status=status)
 
 
 @api.route('/fingerprint', endpoint='add')
