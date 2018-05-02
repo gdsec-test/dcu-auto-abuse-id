@@ -35,7 +35,7 @@ EXPOSE 5000
 
 # Move files to new dir
 RUN mkdir -p /app
-COPY ./*.ini ./*.py ./logging.yml ./*.sh /app/
+COPY ./*.ini ./*.py ./logging.yml ./runserver.sh /app/
 RUN chown -R dcu:dcu /app
 
 # cleanup
@@ -43,4 +43,4 @@ RUN rm -rf /tmp
 
 WORKDIR /app
 
-ENTRYPOINT ["/usr/bin/uwsgi",  "--ini", "/app/uwsgi.ini",  "--need-app", "--lazy-apps"]
+ENTRYPOINT ["/app/runserver.sh"]
