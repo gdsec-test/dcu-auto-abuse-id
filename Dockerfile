@@ -2,46 +2,45 @@
 #
 #
 
-FROM ubuntu:16.04
-MAINTAINER DCU ENG <DCUEng@godaddy.com>
+FROM alpine:3.5
+MAINTAINER DCUENG <DCUEng@godaddy.com>
 
-RUN groupadd -r dcu && useradd -r -m -g dcu dcu
-
+RUN addgroup -S dcu && adduser -H -S -G dcu dcu
 # apt-get installs
-RUN apt-get update && \
-    apt-get install -y build-essential \
-    gcc \
+RUN apk update && \
+    apk add --no-cache build-base \
+    ca-certificates \
     libffi-dev \
-    libssl-dev \
+    linux-headers \
+    openssl-dev \
     python-dev \
-    python-pip \
-    curl
+    py-pip
 
-COPY ./*.ini ./*.sh ./run.py ./celeryconfig.py ./encryption_helper.py ./settings.py ./*.yml /app/
+WORKDIR /tmp
 
-COPY . /tmp
+# Move files to new dir
+ADD . /tmp
 
 # pip install private pips staged by Makefile
-RUN for entry in PyAuth blindAl dcdatabase; \
+RUN for entry in PyAuth dcdatabase blindAl; \
     do \
     pip install --compile "/tmp/private_pips/$entry"; \
     done
 
+# install other requirements
 RUN pip install --compile /tmp
-
-# cleanup
-RUN apt-get remove --purge -y build-essential \
-    gcc \
-    libffi-dev \
-    libssl-dev \
-    python-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp && \
-    chown -R dcu:dcu /app
 
 # Expose Flask port 5000
 EXPOSE 5000
-USER dcu
+
+# Move files to new dir
+RUN mkdir -p /app
+COPY ./*.ini ./*.py ./logging.yml ./*.sh /app/
+RUN chown -R dcu:dcu /app
+
+# cleanup
+RUN rm -rf /tmp
+
 WORKDIR /app
 
-ENTRYPOINT ["/app/runserver.sh"]
+ENTRYPOINT ["/usr/bin/uwsgi",  "--ini", "/app/uwsgi.ini",  "--need-app", "--lazy-apps"]
