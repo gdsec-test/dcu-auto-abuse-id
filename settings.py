@@ -14,6 +14,7 @@ class AppConfig(object):
     LOGGING_COLLECTION = 'logs'
     TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
     AUTH_GROUPS = ['DCU-Phishstory']
+    CACHE_SERVICE = 'auto-abuse-id-cache'
 
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
