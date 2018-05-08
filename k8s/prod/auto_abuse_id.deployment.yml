@@ -35,6 +35,11 @@ spec:
             value: prod
           - name: KEYFILE
             value: /keyfiles/key.txt
+          - name: BROKER_PASS
+            valueFrom:
+              secretKeyRef:
+                name: amqp-auto-abuse-id
+                key: password
           - name: DB_PASS
             valueFrom:
               secretKeyRef:
