@@ -1,0 +1,18 @@
+---
+  kind: "Service"
+  apiVersion: "v1"
+  metadata:
+    labels:
+      app: "auto-abuse-id-cache"
+    # this name is accessible via cluster DNS
+    # ("service-cache" or "service-cache.<namespace>.svc.cluster.local")
+    name: "auto-abuse-id-cache"
+    namespace: abuse-api-ote
+  spec:
+    ports:
+      -
+        name: "auto-abuse-id-cache"
+        port: 6379
+        targetPort: 6379
+    selector:
+      app: "auto-abuse-id-cache"

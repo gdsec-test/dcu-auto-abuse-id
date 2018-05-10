@@ -1,0 +1,34 @@
+---
+apiVersion: "extensions/v1beta1"
+kind: "Deployment"
+metadata:
+  name: "auto-abuse-id-cache"
+  namespace: "abuse-api-ote"
+  labels:
+    app: "auto-abuse-id-cache"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "auto-abuse-id-cache"
+    spec:
+      imagePullSecrets:
+        -
+          name: "k8s-artifactory-creds"
+
+      containers:
+        -
+          name: "redis"
+          imagePullPolicy: "Always"
+          image: "redis"
+          ports:
+            -
+              containerPort: 6379
+              protocol: "TCP"
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - "redis-cli ping"

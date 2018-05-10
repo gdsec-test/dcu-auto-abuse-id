@@ -1,11 +1,12 @@
 from flask import Flask
 from flask_restplus import Api
 from .api import api as ns1
-from service.classifiers.phash import PHash
-from settings import config_by_name
+from celery import Celery
+from celeryconfig import CeleryConfig
+from service.cache.redis_cache import RedisCache
 
 
-def create_app(env):
+def create_app(config):
     app = Flask(__name__)
     app.config.SWAGGER_UI_JSONEDITOR = True
     app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
@@ -25,10 +26,11 @@ def create_app(env):
         doc='/doc',
         authorizations=authorizations
     )
-    config = config_by_name[env]()
-    phash = PHash(config)
-    app.config['phash'] = phash
     app.config['token_authority'] = config.TOKEN_AUTHORITY
     app.config['auth_groups'] = config.AUTH_GROUPS
+    celery = Celery()
+    celery.config_from_object(CeleryConfig(config))
+    app.config['celery'] = celery
+    app.config['cache'] = RedisCache(config.CACHE_SERVICE)
     api.add_namespace(ns1)
     return app

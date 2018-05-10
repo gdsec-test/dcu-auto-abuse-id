@@ -1,15 +1,10 @@
-from PIL import Image
-from settings import config_by_name
-import pymongo.errors
-import gridfs
-import bson
-import imagehash
-import io
+import logging.config
 import os
 import sys
-import yaml
-import logging.config
 
+import yaml
+
+from settings import config_by_name
 
 # Utility to search production mongodb INCIDENTS collection for specific targets, as defined in top_phish
 #  who match a specific abuse_type and were closed with closed_reasons, and return the screenshot_id

@@ -1,10 +1,10 @@
 flask
 flask_restplus
+celery
 blindAl
 dcdatabase
 requests==2.13.0
-selenium==3.3.1
-ImageHash==4.0
 pyyaml
 uwsgi==2.0.15
 PyAuth==5.0.1
+redis
