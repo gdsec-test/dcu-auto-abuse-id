@@ -1,6 +1,6 @@
 REPONAME=infosec-dcu/auto_abuse_id
 BUILDROOT=$(HOME)/dockerbuild/$(REPONAME)
-DOCKERREPO=artifactory.secureserver.net:10014/docker-dcu-local/auto_abuse_id
+DOCKERREPO=docker-dcu-local.artifactory.secureserver.net/auto_abuse_id
 DATE=$(shell date)
 COMMIT=
 BUILD_BRANCH=origin/master
