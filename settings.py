@@ -2,7 +2,7 @@ import os
 import urllib
 
 from encryption_helper import PasswordDecrypter
-
+from collections import defaultdict
 
 class AppConfig(object):
     DBURL = 'localhost'
@@ -12,12 +12,13 @@ class AppConfig(object):
     DB_HOST = 'localhost'
     COLLECTION = 'fingerprints'
     LOGGING_COLLECTION = 'logs'
-    AUTH_GROUPS = ['DCU-Phishstory']
+    AUTH_GROUPS = defaultdict(list)
 
     def __init__(self):
         self.DB_PASS = urllib.quote(PasswordDecrypter.decrypt(os.getenv('DB_PASS'))) if os.getenv('DB_PASS') \
             else 'password'
         self.DBURL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
+        self.AUTH_GROUPS['add'] = ['DCU-Phishstory']
 
 
 class ProductionAppConfig(AppConfig):

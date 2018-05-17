@@ -79,6 +79,37 @@ class TestRest(TestCase):
         resp_data = json.loads(response.data)
         self.assertEqual(resp_data.get('status'), 'SUCCESS')
 
+    @patch.object(Celery, 'AsyncResult')
+    def test_get_scan_complete_cached_missing_auth_key(self, mock_result):
+        mock_result.return_value = MagicMock(
+            state='SUCCESS',
+            ready=lambda: True,
+            get=lambda: dict(id='123', status='SUCCESS'))
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.get(
+            url_for('scan') + '/123',
+            headers={
+                'Content-Type': 'application/json'
+            }
+        )
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'AsyncResult')
+    def test_get_scan_complete_cached_invalid_auth_key(self, mock_result):
+        mock_result.return_value = MagicMock(
+            state='SUCCESS',
+            ready=lambda: True,
+            get=lambda: dict(id='123', status='SUCCESS'))
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.get(
+            url_for('scan') + '/123',
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            }
+        )
+        self.assertEqual(response.status_code, 401)
+
     ''' Classify Tests '''
 
     @patch.object(Celery, 'send_task')
@@ -169,6 +200,90 @@ class TestRest(TestCase):
             url_for('classification') + '/some_id')
         resp_data = json.loads(response.data)
         self.assertEqual(resp_data.get('status'), 'SUCCESS')
+
+    @patch.object(Celery, 'send_task')
+    def test_classify_uri_invalid_auth_key(self, send_task_method):
+        send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
+        data = dict(uri='https://localhost.com')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.post(
+            url_for('classification'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'send_task')
+    def test_classify_uri_missing_auth_key(self, send_task_method):
+        send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
+        data = dict(uri='https://localhost.com')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.post(
+            url_for('classification'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'send_task')
+    def test_classify_image_missing_auth_key(self, send_task_method):
+        send_task_method.return_value = namedtuple('Resp', 'id')('some_jid')
+        data = dict(image_id='abc1234')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.post(
+            url_for('classification'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'send_task')
+    def test_classify_image_invalid_auth_key(self, send_task_method):
+        send_task_method.return_value = namedtuple('Resp', 'id')('some_jid')
+        data = dict(image_id='abc1234')
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.post(
+            url_for('classification'),
+            data=json.dumps(data),
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'AsyncResult')
+    def test_get_classify_complete_cached_invalid_auth_key(self, mock_result):
+        mock_result.return_value = MagicMock(
+            state='SUCCESS',
+            ready=lambda: True,
+            get=lambda: dict(id='some_id', status='SUCCESS'))
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.get(
+            url_for('classification') + '/some_id',
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'blahblahblah'
+            })
+        self.assertEqual(response.status_code, 401)
+
+    @patch.object(Celery, 'AsyncResult')
+    def test_get_classify_complete_cached_missing_auth_key(self, mock_result):
+        mock_result.return_value = MagicMock(
+            state='SUCCESS',
+            ready=lambda: True,
+            get=lambda: dict(id='some_id', status='SUCCESS'))
+        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        response = self.client.get(
+            url_for('classification') + '/some_id',
+            headers={
+                'Content-Type': 'application/json'
+            })
+        self.assertEqual(response.status_code, 401)
+
 
     ''' Fingerprint Tests '''
 

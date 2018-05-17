@@ -116,12 +116,12 @@ scan_resource = api.model(
     }
 )
 
-
 def token_required(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
         auth_groups = current_app.config.get('auth_groups')
         token_authority = current_app.config.get('token_authority')
+        endpoint = args[0].endpoint
 
         if not token_authority:  # bypass if no token authority is set
             return f(*args, **kwargs)
@@ -132,8 +132,9 @@ def token_required(f):
 
         try:
             auth_token = AuthToken.parse(token, token_authority, 'jomax')
-            if not set(auth_token.payload.get('groups')) & set(auth_groups):
-                return {'message': 'Unauthorized'}, 401
+            if auth_groups[endpoint]:
+                if not set(auth_token.payload.get('groups')) & set(auth_groups[endpoint]):
+                    return {'message': 'Unauthorized'}, 401
             _logger.info('{}: authenticated'.format(auth_token.payload.get('accountName')))
         except Exception:
             return {'message': 'Error in authorization'}, 401
@@ -159,6 +160,8 @@ class IntakeScan(Resource):
     @api.marshal_with(scan_resource, code=201)
     @api.response(201, 'Success', model=scan_resource)
     @api.response(400, 'Validation Error')
+    @api.doc(security='apikey')
+    @token_required
     def post(self):
         """
         Submit URI for scanning and potential Abuse API ticket creation
@@ -186,6 +189,8 @@ class ScanResult(Resource):
     @api.marshal_with(scan_resource, code=200)
     @api.response(200, 'Success', model=scan_resource)
     @api.response(404, 'Invalid scan ID')
+    @api.doc(security='apikey')
+    @token_required
     def get(self, jid):
         """
         Obtain the results or status of a previously submitted scan request
@@ -213,6 +218,8 @@ class IntakeResource(Resource):
     @api.marshal_with(classification_resource, code=201)
     @api.response(201, 'Success', model=classification_resource)
     @api.response(400, 'Validation Error')
+    @api.doc(security='apikey')
+    @token_required
     def post(self):
         """
         Submit URI for auto detection and classification
@@ -222,7 +229,6 @@ class IntakeResource(Resource):
         """
         payload = request.json
         validate_payload(payload, classify_input)
-
         uri = payload.get('uri')
         image = payload.get('image_id')
         if uri and image:
@@ -248,6 +254,8 @@ class ClassificationResult(Resource):
     @api.marshal_with(classification_resource, code=200)
     @api.response(200, 'Success', model=classification_resource)
     @api.response(404, 'Invalid classification ID')
+    @api.doc(security='apikey')
+    @token_required
     def get(self, jid):
         """
         Obtain the results or status of a previously submitted classification request
