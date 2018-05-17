@@ -126,7 +126,7 @@ def token_required(f):
         if not token_authority:  # bypass if no token authority is set
             return f(*args, **kwargs)
 
-        token = request.headers.get('X-API-KEY')
+        token = request.headers.get('Authorization')
         if not token:
             return {'message': 'API token is missing'}, 401
 
@@ -146,6 +146,7 @@ def token_required(f):
 class Health(Resource):
 
     @api.response(200, 'OK')
+    @api.doc(security=[])
     def get(self):
         """
         Health check endpoint
@@ -160,7 +161,7 @@ class IntakeScan(Resource):
     @api.marshal_with(scan_resource, code=201)
     @api.response(201, 'Success', model=scan_resource)
     @api.response(400, 'Validation Error')
-    @api.doc(security='apikey')
+    @api.response(401, 'Unauthorized')
     @token_required
     def post(self):
         """
@@ -188,8 +189,8 @@ class ScanResult(Resource):
 
     @api.marshal_with(scan_resource, code=200)
     @api.response(200, 'Success', model=scan_resource)
+    @api.response(401, 'Unauthorized')
     @api.response(404, 'Invalid scan ID')
-    @api.doc(security='apikey')
     @token_required
     def get(self, jid):
         """
@@ -217,8 +218,8 @@ class IntakeResource(Resource):
     @api.expect(classify_input)
     @api.marshal_with(classification_resource, code=201)
     @api.response(201, 'Success', model=classification_resource)
+    @api.response(401, 'Unauthorized')
     @api.response(400, 'Validation Error')
-    @api.doc(security='apikey')
     @token_required
     def post(self):
         """
@@ -253,8 +254,8 @@ class ClassificationResult(Resource):
 
     @api.marshal_with(classification_resource, code=200)
     @api.response(200, 'Success', model=classification_resource)
+    @api.response(401, 'Unauthorized')
     @api.response(404, 'Invalid classification ID')
-    @api.doc(security='apikey')
     @token_required
     def get(self, jid):
         """
@@ -282,7 +283,7 @@ class AddNewImage(Resource):
     @api.expect(image_data_input)
     @api.response(201, 'Success')
     @api.response(400, 'Validation Error')
-    @api.doc(security='apikey')
+    @api.response(401, 'Unauthorized')
     @token_required
     def put(self):
         """
