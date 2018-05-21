@@ -14,7 +14,7 @@ def create_app(config):
         'apikey': {
             'type': 'apiKey',
             'in': 'header',
-            'name': 'X-API-KEY'
+            'name': 'Authorization'
         }
     }
     api = Api(
@@ -24,7 +24,8 @@ def create_app(config):
         description='Classifies URLs/Images based on their detected abuse type',
         validate=True,
         doc='/doc',
-        authorizations=authorizations
+        authorizations=authorizations,
+        security='apiKey'
     )
     app.config['token_authority'] = config.TOKEN_AUTHORITY
     app.config['auth_groups'] = config.AUTH_GROUPS

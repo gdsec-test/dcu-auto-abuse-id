@@ -105,7 +105,7 @@ class TestRest(TestCase):
             url_for('scan') + '/123',
             headers={
                 'Content-Type': 'application/json',
-                'X-API-KEY': 'blahblahblah'
+                'Authorization': 'blahblahblah'
             }
         )
         self.assertEqual(response.status_code, 401)
@@ -211,7 +211,7 @@ class TestRest(TestCase):
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json',
-                'X-API-KEY': 'blahblahblah'
+                'Authorization': 'blahblahblah'
             })
         self.assertEqual(response.status_code, 401)
 
@@ -251,7 +251,7 @@ class TestRest(TestCase):
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json',
-                'X-API-KEY': 'blahblahblah'
+                'Authorization': 'blahblahblah'
             })
         self.assertEqual(response.status_code, 401)
 
@@ -266,7 +266,7 @@ class TestRest(TestCase):
             url_for('classification') + '/some_id',
             headers={
                 'Content-Type': 'application/json',
-                'X-API-KEY': 'blahblahblah'
+                'Authorization': 'blahblahblah'
             })
         self.assertEqual(response.status_code, 401)
 
@@ -328,6 +328,6 @@ class TestRest(TestCase):
             data=json.dumps(data),
             headers={
                 'Content-Type': 'application/json',
-                'X-API-KEY': 'blahblahblah'
+                'Authorization': 'blahblahblah'
             })
         self.assertEqual(response.status_code, 401)
