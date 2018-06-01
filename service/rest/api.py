@@ -146,7 +146,6 @@ def token_required(f):
 class Health(Resource):
 
     @api.response(200, 'OK')
-    @api.doc(security=[])
     def get(self):
         """
         Health check endpoint
@@ -162,6 +161,7 @@ class IntakeScan(Resource):
     @api.response(201, 'Success', model=scan_resource)
     @api.response(400, 'Validation Error')
     @api.response(401, 'Unauthorized')
+    @api.doc(security='apikey')
     @token_required
     def post(self):
         """
@@ -191,6 +191,7 @@ class ScanResult(Resource):
     @api.response(200, 'Success', model=scan_resource)
     @api.response(401, 'Unauthorized')
     @api.response(404, 'Invalid scan ID')
+    @api.doc(security='apikey')
     @token_required
     def get(self, jid):
         """
@@ -220,6 +221,7 @@ class IntakeResource(Resource):
     @api.response(201, 'Success', model=classification_resource)
     @api.response(401, 'Unauthorized')
     @api.response(400, 'Validation Error')
+    @api.doc(security='apikey')
     @token_required
     def post(self):
         """
@@ -256,6 +258,7 @@ class ClassificationResult(Resource):
     @api.response(200, 'Success', model=classification_resource)
     @api.response(401, 'Unauthorized')
     @api.response(404, 'Invalid classification ID')
+    @api.doc(security='apikey')
     @token_required
     def get(self, jid):
         """
@@ -284,6 +287,7 @@ class AddNewImage(Resource):
     @api.response(201, 'Success')
     @api.response(400, 'Validation Error')
     @api.response(401, 'Unauthorized')
+    @api.doc(security='apikey')
     @token_required
     def put(self):
         """

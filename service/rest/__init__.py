@@ -24,8 +24,7 @@ def create_app(config):
         description='Classifies URLs/Images based on their detected abuse type',
         validate=True,
         doc='/doc',
-        authorizations=authorizations,
-        security='apiKey'
+        authorizations=authorizations
     )
     app.config['token_authority'] = config.TOKEN_AUTHORITY
     app.config['auth_groups'] = config.AUTH_GROUPS
