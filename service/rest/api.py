@@ -5,7 +5,7 @@ from flask_restplus import Namespace, Resource, fields, abort
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
 from functools import wraps
-from auth.AuthToken import AuthToken
+from gd_auth.token import AuthToken
 
 _logger = logging.getLogger(__name__)
 

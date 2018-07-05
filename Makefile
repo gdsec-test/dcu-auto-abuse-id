@@ -6,7 +6,7 @@ COMMIT=
 BUILD_BRANCH=origin/master
 
 # libraries we need to stage for pip to install inside Docker build
-PRIVATE_PIPS="git@github.secureserver.net:auth-contrib/PyAuth.git;70e6f29e629efbd53f82e668248075ee111f7fea" \
+PRIVATE_PIPS="git@github.secureserver.net:auth-contrib/PyAuth.git" \
 git@github.secureserver.net:ITSecurity/blindAl.git \
 git@github.secureserver.net:ITSecurity/dcdatabase.git
 
