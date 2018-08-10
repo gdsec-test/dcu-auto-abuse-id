@@ -22,7 +22,7 @@ WORKDIR /tmp
 ADD . /tmp
 
 # pip install private pips staged by Makefile
-RUN for entry in PyAuth dcdatabase blindAl; \
+RUN for entry in PyAuth dcdatabase; \
     do \
     pip install --compile "/tmp/private_pips/$entry"; \
     done

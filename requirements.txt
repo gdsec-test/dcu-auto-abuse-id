@@ -1,7 +1,6 @@
 flask
 flask_restplus
 celery==4.1.1
-blindAl
 dcdatabase
 requests==2.13.0
 pyyaml

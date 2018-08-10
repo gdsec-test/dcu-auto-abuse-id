@@ -48,8 +48,7 @@ pip install -r requirements.txt
 
  ## Built With
  Auto Abuse ID is built utilizing the following key technologies
- 1. BlindAl
- 2. dcdatabase
+ 1. dcdatabase
  
 ## Running Locally
  If you would like to run auto_abuse_id locally you will need to specify the following environment variables

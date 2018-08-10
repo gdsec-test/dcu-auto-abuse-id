@@ -3,8 +3,6 @@ import urllib
 
 from kombu import Exchange, Queue
 
-from encryption_helper import PasswordDecrypter
-
 
 class CeleryConfig:
     BROKER_TRANSPORT = 'pyamqp'
@@ -47,9 +45,9 @@ class CeleryConfig:
         }
 
     def __init__(self, settings):
-        self.BROKER_PASS = os.getenv('BROKER_PASS', 'password')
-        self.BROKER_PASS = urllib.quote(PasswordDecrypter.decrypt(self.BROKER_PASS))
+        self.BROKER_PASS = urllib.quote(os.getenv('BROKER_PASS', 'password'))
         self.BROKER_URL = 'amqp://02d1081iywc7A:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
+
         self.CELERY_RESULT_BACKEND = settings.DBURL
         self.CELERY_MONGODB_BACKEND_SETTINGS = {
             'database': settings.DB,

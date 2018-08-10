@@ -33,8 +33,6 @@ spec:
             value: 'THIS_STRING_IS_REPLACED_DURING_BUILD'
           - name: sysenv
             value: prod
-          - name: KEYFILE
-            value: /keyfiles/key.txt
           - name: BROKER_PASS
             valueFrom:
               secretKeyRef:
@@ -45,13 +43,3 @@ spec:
               secretKeyRef:
                 name: db-auto-abuse-id
                 key: password
-
-          volumeMounts:
-          - name: encryption-keys
-            mountPath: /keyfiles
-            readOnly: true
-
-      volumes:
-        - name: encryption-keys
-          secret:
-            secretName: encryption-key-files
