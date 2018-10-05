@@ -1,5 +1,7 @@
 import logging
+
 from redis import Redis
+
 from interface.cache import Cache
 
 
@@ -15,7 +17,7 @@ class RedisCache(Cache):
     def get(self, redis_key):
         try:
             redis_value = self._redis.get(redis_key)
-        except Exception as e:
+        except Exception:
             redis_value = None
         return redis_value
 
@@ -24,5 +26,4 @@ class RedisCache(Cache):
             self._redis.set(key, data)
             self._redis.expire(key, ttl)
         except Exception as e:
-            self._logger.error("Error in setting the redis value for %s : %s",
-                               key.decode('utf-8'), e.message)
+            self._logger.error("Error in setting the redis value for {} : {}".format(key.decode('utf-8'), e.message))

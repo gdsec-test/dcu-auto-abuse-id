@@ -1,7 +1,7 @@
 import os
 import urllib
-
 from collections import defaultdict
+
 
 class AppConfig(object):
     DBURL = 'localhost'

@@ -4,7 +4,7 @@ from collections import namedtuple
 from celery import Celery
 from flask import url_for
 from flask_testing.utils import TestCase
-from mock import patch, MagicMock
+from mock import MagicMock, patch
 
 import service.rest
 from mock_redis import MockRedis
@@ -33,7 +33,6 @@ class TestRest(TestCase):
             })
         self.assertEqual(response.status_code, 400)
 
-
     @patch.object(Celery, 'send_task')
     def test_scan_uri_success_cache(self, send_task_method):
         send_task_method.return_value = namedtuple('Resp', 'id')('some_id')
@@ -60,9 +59,7 @@ class TestRest(TestCase):
     @patch.object(Celery, 'AsyncResult')
     def test_get_scan_pending(self, mock_result):
         mock_result.return_value = MagicMock(state='PENDING', ready=lambda: False)
-        response = self.client.get(
-            url_for('scan') + '/123')
-        resp_data = json.loads(response.data)
+        response = self.client.get(url_for('scan') + '/123')
         self.assertEqual(response.status_code, 200)
 
     @patch.object(Celery, 'AsyncResult')
@@ -71,11 +68,9 @@ class TestRest(TestCase):
             state='SUCCESS',
             ready=lambda: True,
             get=lambda: dict(id='123', status='SUCCESS'))
-        response = self.client.get(
-            url_for('scan') + '/123')
+        response = self.client.get(url_for('scan') + '/123')
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(
-            url_for('scan') + '/123')
+        response = self.client.get(url_for('scan') + '/123')
         resp_data = json.loads(response.data)
         self.assertEqual(resp_data.get('status'), 'SUCCESS')
 
@@ -184,7 +179,6 @@ class TestRest(TestCase):
         mock_result.return_value = MagicMock(state='PENDING', ready=lambda: False)
         response = self.client.get(
             url_for('classification') + '/some_id')
-        resp_data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
 
     @patch.object(Celery, 'AsyncResult')
@@ -283,7 +277,6 @@ class TestRest(TestCase):
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 401)
-
 
     ''' Fingerprint Tests '''
 

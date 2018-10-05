@@ -3,3 +3,5 @@ mock
 mongomock
 coverage
 flask_testing
+flake8
+isort

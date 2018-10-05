@@ -1,12 +1,12 @@
-import os
-import yaml
 import logging.config
+import os
+
 import pymongo.errors
-
-from flask import Flask
+import yaml
 from bson.objectid import ObjectId
-from settings import config_by_name
+from flask import Flask
 
+from settings import config_by_name
 
 # Web page flask app allowing the user to review the images from the fingerprint hash db collection
 #  in order to make a visual validation on if the image is indeed malicious or not.  The user can also

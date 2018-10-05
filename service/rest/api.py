@@ -1,11 +1,13 @@
-import logging
 import json
-from flask import request, current_app
-from flask_restplus import Namespace, Resource, fields, abort
+import logging
+from functools import wraps
+
+from flask import current_app, request
+from flask_restplus import Namespace, Resource, abort, fields
+from gd_auth.token import AuthToken
+
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
-from functools import wraps
-from gd_auth.token import AuthToken
 
 _logger = logging.getLogger(__name__)
 
@@ -115,6 +117,7 @@ scan_resource = api.model(
             )
     }
 )
+
 
 def token_required(f):
     @wraps(f)
@@ -294,6 +297,9 @@ class AddNewImage(Resource):
         Add a classification for an existing DCU image
         Hashes an existing DCU image for use in future classification requests
         """
-        payload = request.json
-        result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
+        # Currently we don't return success/failure statuses to clients. The code below could be utilized to achieve
+        # this goal but is currently not utilized.
+
+        # payload = request.json
+        # result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
         return None, 201
