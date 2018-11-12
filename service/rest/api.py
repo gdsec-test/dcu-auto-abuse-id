@@ -129,16 +129,19 @@ def token_required(f):
         if not token_authority:  # bypass if no token authority is set
             return f(*args, **kwargs)
 
-        token = request.headers.get('Authorization')
+        token = request.headers.get('Authorization', '').strip()
         if not token:
-            return {'message': 'API token is missing'}, 401
+            return {'message': 'Authorization header not provided'}, 401
+
+        if token.startswith('sso-jwt'):
+            token = token[8:].strip()
 
         try:
             auth_token = AuthToken.parse(token, token_authority, 'jomax')
             if auth_groups[endpoint]:
                 if not set(auth_token.payload.get('groups')) & set(auth_groups[endpoint]):
-                    return {'message': 'Unauthorized'}, 401
-            _logger.info('{}: authenticated'.format(auth_token.payload.get('accountName')))
+                    return {'message': 'Authenticated user is not allowed access'}, 403
+            _logger.debug('{}: authenticated'.format(auth_token.payload.get('accountName')))
         except Exception:
             return {'message': 'Error in authorization'}, 401
         return f(*args, **kwargs)
