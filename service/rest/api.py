@@ -303,6 +303,7 @@ class AddNewImage(Resource):
         # Currently we don't return success/failure statuses to clients. The code below could be utilized to achieve
         # this goal but is currently not utilized.
 
-        # payload = request.json
-        # result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
+        payload = request.json
+        result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
+        
         return None, 201
