@@ -304,6 +304,6 @@ class AddNewImage(Resource):
         # this goal but is currently not utilized.
 
         payload = request.json
-        result = current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
-        
+        current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
+
         return None, 201
