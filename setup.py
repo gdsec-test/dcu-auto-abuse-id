@@ -1,24 +1,27 @@
-from pip.req import parse_requirements
 from setuptools import find_packages, setup
 
-# parse_requirements() returns generator of pip.req.InstallRequirement objects
-install_reqs = parse_requirements('requirements.txt', session=False)
-testing_reqs = parse_requirements('test_requirements.txt', session=False)
+with open('requirements.txt') as f:
+    install_reqs = f.read().splitlines()
 
-# reqs is a list of requirement
-# e.g. ['django==1.5.1', 'mezzanine==1.4.6']
-reqs = [str(ir.req) for ir in install_reqs]
-test_reqs = [str(ir.req) for ir in testing_reqs]
+with open('test_requirements.txt') as f:
+    testing_reqs = f.read().splitlines()
+
+with open('README.md') as f:
+    long_description = f.read()
 
 setup(
     name='auto_abuse_id',
     version='1.0',
-    description='Deals with automated detection of abusive content',
     author='DCU',
     author_email='dcueng@godaddy.com',
+    description='Deals with automated detection of abusive content',
+    long_description=long_description,
     url='https://github.secureserver.net/ITSecurity/auto_abuse_id',
-    # packages=packages,
-    packages=find_packages(exclude=['tests', 'tests.*']),
-    install_requires=reqs,
-    tests_require=test_reqs,
-    test_suite="nose.collector")
+    packages=find_packages(exclude=['tests']),
+    install_requires=install_reqs,
+    tests_require=testing_reqs,
+    test_suite='nose.collector',
+    classifiers=[
+        'Programming Language :: Python :: 2.7'
+    ]
+)
