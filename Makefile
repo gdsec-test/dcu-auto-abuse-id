@@ -4,6 +4,7 @@ DOCKERREPO=docker-dcu-local.artifactory.secureserver.net/auto_abuse_id
 DATE=$(shell date)
 COMMIT=
 BUILD_BRANCH=origin/master
+SHELL=/bin/bash
 
 # libraries we need to stage for pip to install inside Docker build
 PRIVATE_PIPS="git@github.secureserver.net:auth-contrib/PyAuth.git" \

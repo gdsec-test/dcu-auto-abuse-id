@@ -1,9 +1,11 @@
+from celery import Celery
 from flask import Flask
 from flask_restplus import Api
-from .api import api as ns1
-from celery import Celery
+
 from celeryconfig import CeleryConfig
 from service.cache.redis_cache import RedisCache
+
+from .api import api as ns1
 
 
 def create_app(config):
