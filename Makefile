@@ -1,4 +1,4 @@
-REPONAME=infosec-dcu/auto_abuse_id
+REPONAME=digital-crimes/auto_abuse_id
 BUILDROOT=$(HOME)/dockerbuild/$(REPONAME)
 DOCKERREPO=docker-dcu-local.artifactory.secureserver.net/auto_abuse_id
 DATE=$(shell date)

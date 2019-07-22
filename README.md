@@ -4,7 +4,7 @@ Project to programmatically identify which content is abusive
 ## Cloning
 To clone the repository via SSH perform the following
 ```
-git clone git@github.secureserver.net:ITSecurity/auto_abuse_id.git
+git clone git@github.secureserver.net:digital-crimes/auto_abuse_id.git
 ```
 
 It is recommended that you clone this project into a pyvirtualenv or equivalent virtual environment.

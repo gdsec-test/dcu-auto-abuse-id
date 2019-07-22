@@ -16,7 +16,7 @@ setup(
     author_email='dcueng@godaddy.com',
     description='Deals with automated detection of abusive content',
     long_description=long_description,
-    url='https://github.secureserver.net/ITSecurity/auto_abuse_id',
+    url='https://github.secureserver.net/digital-crimes/auto_abuse_id',
     packages=find_packages(exclude=['tests']),
     install_requires=install_reqs,
     tests_require=testing_reqs,
