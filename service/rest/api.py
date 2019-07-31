@@ -137,7 +137,7 @@ def token_required(f):
             token = token[8:].strip()
 
         try:
-            auth_token = AuthToken.parse(token, token_authority, 'jomax')
+            auth_token = AuthToken.parse(token, token_authority, 'auto-abuse-id', 'jomax')
             if auth_groups[endpoint]:
                 if not set(auth_token.payload.get('groups')) & set(auth_groups[endpoint]):
                     return {'message': 'Authenticated user is not allowed access'}, 403
