@@ -9,7 +9,7 @@ from settings import config_by_name
 config = config_by_name[os.getenv('sysenv', 'dev')]()
 app = create_app(config)
 
-path = os.path.dirname(os.path.abspath(__file__)) + '/' + 'logging.yml'
+path = os.path.dirname(os.path.abspath(__file__)) + '/' + 'logging.yaml'
 value = os.getenv('LOG_CFG', None)
 if value:
     path = value

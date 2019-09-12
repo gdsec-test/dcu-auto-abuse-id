@@ -24,7 +24,7 @@ config = config_by_name[env]()
 path = None
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 while path is None:
-    file_path = cur_dir + '/logging.yml'
+    file_path = cur_dir + '/logging.yaml'
     if os.path.isfile(file_path):
         path = file_path
         break
