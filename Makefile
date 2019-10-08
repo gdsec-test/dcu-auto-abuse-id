@@ -92,13 +92,13 @@ dev: prep
 prod-deploy: prod
 	@echo "----- deploying $(REPONAME) prod -----"
 	docker push $(DOCKERREPO):$(COMMIT)
-	kubectl --context prod apply -f $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yaml --record
+	kubectl --context prod-dcu apply -f $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yaml --record
 
 .PHONY: ote-deploy
 ote-deploy: ote
 	@echo "----- deploying $(REPONAME) ote -----"
 	docker push $(DOCKERREPO):ote
-	kubectl --context ote apply -f $(BUILDROOT)/k8s/ote/auto_abuse_id.deployment.yaml --record
+	kubectl --context ote-dcu apply -f $(BUILDROOT)/k8s/ote/auto_abuse_id.deployment.yaml --record
 
 .PHONY: dev-deploy
 dev-deploy: dev
