@@ -5,5 +5,5 @@ dcdatabase
 requests==2.13.0
 pyyaml
 uwsgi==2.0.15
-PyAuth==7.0.2
+PyAuth==7.1.1
 redis
