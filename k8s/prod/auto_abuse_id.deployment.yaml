@@ -1,5 +1,5 @@
 ---
-apiVersion: "extensions/v1beta1"
+apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "auto-abuse-id"
@@ -9,6 +9,9 @@ metadata:
 spec:
   replicas: 3
   revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: "auto-abuse-id"
   template:
     metadata:
       labels:
