@@ -1,5 +1,5 @@
 # Auto Abuse ID
-Project to programmatically identify which content is abusive
+Project to programmatically identify which content is abusive.  Open API Spec for REST Endpoints: https://classify.int.godaddy.com/doc
 
 ## Cloning
 To clone the repository via SSH perform the following
@@ -47,8 +47,17 @@ Auto Abuse ID is built utilizing the following key technologies
 1. dcdatabase
  
 ## Running Locally
-If you would like to run auto_abuse_id locally you will need to specify the following environment variables
-1. `sysenv` (dev, ote, prod)
+If you would like to run auto_abuse_id locally, you will need to specify the following environment variables
+1. `sysenv` (test, dev, ote, prod)
+   1. If running as `test`, you'll need an instance of MongoDB running on port 27017 and an instance of Redis Server running on port 6379.  MongoDB will need to have a `devphishstory` database with a `test` collection contained within it.  There should be no mongodb authentication.
+2. `BROKER_PASS` RabbitMQ password for the `02d1081iywc7A` user
+3. `DB_PASS` if running with a `dev`, `ote` or `prod` value for `sysenv`
  
 ### usage:
-`curl -XPUT -H "Content-Type: application/json" http://localhost:5000/classify/submit_uri -d '{"uri": "https://godaddy.com"}'`
+To request clasification of a URI, run the following curl command:
+
+`curl -XPOST -H "Content-Type: application/json" http://localhost:5000/classify/classification -d '{"uri": "https://godaddy.com"}'`
+
+The result will contain a job id `JID`.  Use that JID in the next call, which will return classification results:
+
+`curl -H "accept: application/json" http://localhost:5000/classify/classification/JID`

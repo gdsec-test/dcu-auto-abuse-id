@@ -7,3 +7,4 @@ pyyaml
 uwsgi==2.0.15
 PyAuth==7.1.1
 redis
+Werkzeug==0.16.1
