@@ -1,5 +1,6 @@
 # Auto Abuse ID
 Project to programmatically identify which content is abusive.  Open API Spec for REST Endpoints: https://classify.int.godaddy.com/doc
+To run from this swagger spec, you'll need to auth with a current JWT from a user in one of the groups identified [here](https://github.secureserver.net/digital-crimes/auto_abuse_id/blob/master/settings.py#L19)
 
 ## Cloning
 To clone the repository via SSH perform the following
@@ -56,8 +57,53 @@ If you would like to run auto_abuse_id locally, you will need to specify the fol
 ### usage:
 To request clasification of a URI, run the following curl command:
 
-`curl -XPOST -H "Content-Type: application/json" http://localhost:5000/classify/classification -d '{"uri": "https://godaddy.com"}'`
+    curl --location --request POST 'http://127.0.0.1:5000/classify/classification' \
+    --header 'Authorization: sso-jwt YOUR_JWT' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{"uri": "http://yahoo.com"}'
 
-The result will contain a job id `JID`.  Use that JID in the next call, which will return classification results:
+>Note: If running as `test`, you should see activity in the `testclassify_tasks` Rabbit queue ([web browser link here](http://rmq-dcu.int.godaddy.com:15672/#/))... however, the message will remain there if there are no consumers.  By setting the "Ack Mode" to "Ack message requeue false", you can view the message while removing it from the queue.
 
-`curl -H "accept: application/json" http://localhost:5000/classify/classification/JID`
+The result will contain a job id `id`.  Use that `id` in the next call, which will return classification results:
+
+    curl --location --request GET 'http://127.0.0.1:5000/classify/classification/JID' \
+    --header 'Authorization: sso-jwt YOUR_JWT'
+
+## CURL test on PROD
+To run from this against prod, you'll need to auth with a current JWT from a user in one of the groups identified [here](https://github.secureserver.net/digital-crimes/auto_abuse_id/blob/master/settings.py#L19)
+
+To request classification of a URI in prod, run the following curl command:
+
+    curl --location --request POST 'https://classify.int.godaddy.com/classify/classification' \
+    --header 'Authorization: sso-jwt YOUR_JWT' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{"uri": "http://impcat.com"}'
+
+The result should resemble:
+
+    {
+       "status": "PENDING",
+       "confidence": 0.0,
+       "target": null,
+       "candidate": "http://beandejo.com",
+       "meta": null,
+       "type": null,
+       "id": "1cde74c5-ba92-4647-a5ff-f423f313da8d"
+    }
+
+The result will contain a job id `id`.  Use that `id` in the next call, which will return classification results:
+
+    curl --location --request GET 'https://classify.int.godaddy.com/classify/classification/1cde74c5-ba92-4647-a5ff-f423f313da8d' \
+    --header 'Authorization: sso-jwt YOUR_JWT'`
+
+The result should resemble:
+
+    {
+       "status": "SUCCESS",
+       "confidence": 0.0,
+       "target": null,
+       "candidate": "http://beandejo.com",
+       "meta": "{}",
+       "type": "UNKNOWN",
+       "id": "1cde74c5-ba92-4647-a5ff-f423f313da8d"
+    }

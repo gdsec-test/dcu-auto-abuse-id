@@ -156,7 +156,7 @@ class Health(Resource):
         """
         Health check endpoint
         """
-        return '', 200
+        return 'OK', 200
 
 
 @api.route('/scan', endpoint='scan')

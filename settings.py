@@ -53,12 +53,14 @@ class DevelopmentAppConfig(AppConfig):
 
 
 class TestingConfig(AppConfig):
-    DBURL = 'mongodb://localhost/devphishstory'
-    COLLECTION = 'test'
-    DB_HOST = 'localhost'
-    DB_PORT = 27017
     TOKEN_AUTHORITY = None
     CACHE_SERVICE = 'localhost'
+
+    def __init__(self):
+        self.DBURL = 'mongodb://localhost/devphishstory'
+        self.COLLECTION = 'test'
+        self.DB_HOST = 'localhost'
+        self.DB_PORT = 27017
 
 
 config_by_name = {'dev': DevelopmentAppConfig,

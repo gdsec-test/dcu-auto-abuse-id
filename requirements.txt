@@ -4,7 +4,7 @@ celery==4.1.1
 dcdatabase
 requests==2.13.0
 pyyaml
-uwsgi==2.0.15
-PyAuth==7.1.1
+uwsgi==2.0.17.1
+PyAuth==7.1.2
 redis
 Werkzeug==0.16.1
