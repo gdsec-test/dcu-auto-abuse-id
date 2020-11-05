@@ -5,6 +5,7 @@ dcdatabase
 requests==2.13.0
 pyyaml
 uwsgi==2.0.17.1
-PyAuth==7.1.2
+PyAuth==7.2.2
 redis
 Werkzeug==0.16.1
+pyrsistent==0.16.0

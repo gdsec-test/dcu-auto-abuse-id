@@ -67,26 +67,11 @@ classification_resource = api.model(
                 required=True,
                 default=0.0
             ),
-        'target':
-            fields.String(
-                help='Brand being targeted',
-                example='NETFLIX'
-            ),
         'candidate':
             fields.String(
                 help='The candidate being scanned',
                 example='http://example.com',
                 required=True
-            ),
-        'meta':
-            fields.String(
-                help='Additional metadata'
-            ),
-        'type':
-            fields.String(
-                help='The type of abuse that was detected',
-                required=True,
-                enum=['PHISHING', 'MALWARE', 'SPAM', 'UNKNOWN']
             )
     }
 )
