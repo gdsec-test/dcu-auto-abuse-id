@@ -119,16 +119,6 @@ class TestRest(TestCase):
             })
         self.assertEqual(response.status_code, 201)
 
-    def test_classify_invalid_request(self):
-        data = dict(uri='http://localhost', image_id='blah')
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 400)
-
     def test_classify_invalid_uri(self):
         data = dict(uri='http://localhost')
         response = self.client.post(
@@ -138,41 +128,6 @@ class TestRest(TestCase):
                 'Content-Type': 'application/json'
             })
         self.assertEqual(response.status_code, 400)
-
-    @patch.object(Celery, 'send_task')
-    def test_classify_image_success(self, send_task_method):
-        send_task_method.return_value = namedtuple('Resp', 'id')('some_jid')
-        data = dict(image_id='abc1234')
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 201)
-
-    @patch.object(Celery, 'send_task')
-    def test_classify_image_success_cache(self, send_task_method):
-        send_task_method.return_value = namedtuple('Resp', 'id')('some_id')
-        data = dict(image_id='abc123')
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 201)
-        send_task_method.return_value = namedtuple('Resp', 'id')('some_other_id')
-        data = dict(image_id='abc123')
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        resp_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(resp_data.get('id'), 'some_id')
 
     @patch.object(Celery, 'AsyncResult')
     def test_get_classify_pending(self, mock_result):
@@ -222,33 +177,6 @@ class TestRest(TestCase):
             })
         self.assertEqual(response.status_code, 401)
 
-    @patch.object(Celery, 'send_task')
-    def test_classify_image_missing_auth_key(self, send_task_method):
-        send_task_method.return_value = namedtuple('Resp', 'id')('some_jid')
-        data = dict(image_id='abc1234')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 401)
-
-    @patch.object(Celery, 'send_task')
-    def test_classify_image_invalid_auth_key(self, send_task_method):
-        send_task_method.return_value = namedtuple('Resp', 'id')('some_jid')
-        data = dict(image_id='abc1234')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
-        response = self.client.post(
-            url_for('classification'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'blahblahblah'
-            })
-        self.assertEqual(response.status_code, 401)
-
     @patch.object(Celery, 'AsyncResult')
     def test_get_classify_complete_cached_invalid_auth_key(self, mock_result):
         mock_result.return_value = MagicMock(
@@ -275,52 +203,5 @@ class TestRest(TestCase):
             url_for('classification') + '/some_id',
             headers={
                 'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 401)
-
-    ''' Fingerprint Tests '''
-
-    @patch.object(Celery, 'send_task')
-    def test_add_classification_success(self, send_task_method):
-        send_task_method.return_value = True
-        data = dict(image_id='someid', type='PHISHING', target='netflix')
-        response = self.client.put(
-            url_for('add'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 201)
-
-    def test_add_classification_bad_request(self):
-        data = dict(image_id='someid')
-        response = self.client.put(
-            url_for('add'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 400)
-
-    def test_missing_auth_key(self):
-        data = dict(image_id='someid', type='PHISHING', target='netflix')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
-        response = self.client.put(
-            url_for('add'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json'
-            })
-        self.assertEqual(response.status_code, 401)
-
-    def test_invalid_auth_key(self):
-        data = dict(image_id='someid', type='PHISHING', target='netflix')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
-        response = self.client.put(
-            url_for('add'),
-            data=json.dumps(data),
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'blahblahblah'
             })
         self.assertEqual(response.status_code, 401)

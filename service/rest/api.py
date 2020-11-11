@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 
 from flask import current_app, request
-from flask_restplus import Namespace, Resource, abort, fields
+from flask_restplus import Namespace, Resource, fields
 from gd_auth.token import AuthToken
 
 from service.rest.custom_fields import Uri
@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 # Phash celery endpoints
 CLASSIFY_ROUTE = 'classify.request'
 SCAN_ROUTE = 'scan.request'
-FINGERPRINT_ROUTE = 'fingerprint.request'
 
 
 api = Namespace('classify',
@@ -31,18 +30,7 @@ scan_input = api.model(
 
 classify_input = api.model(
     'input', {
-        'uri': Uri(required=False, description='URI to classify'),
-        'image_id': fields.String(help='Image ID of existing DCU image', required=False, example='abc123')
-    }
-)
-
-image_data_input = api.model(
-    'image_data', {
-        'image_id': fields.String(help='Image ID of existing DCU image', required=True, example='abc123'),
-        'target': fields.String(help='The brand being targeted if applicable', example='Netflix'),
-        'type': fields.String(help='Type of abuse associated with image', required=True, enum=['PHISHING',
-                                                                                               'MALWARE',
-                                                                                               'SPAM'])
+        'uri': Uri(required=False, description='URI to classify')
     }
 )
 
@@ -217,26 +205,20 @@ class IntakeResource(Resource):
     def post(self):
         """
         Submit URI for auto detection and classification
-        Endpoint to handle intake of URIs reported as possibly containing abuse, which will then
-        be parsed and evaluated to automatically determine how closely they match existing
-        abuse fingerprints
+        Endpoint to handle intake of URIs reported as possibly containing abuse
         """
         payload = request.json
         validate_payload(payload, classify_input)
         uri = payload.get('uri')
-        image = payload.get('image_id')
-        if uri and image:
-            abort(400, 'uri and image are mutually exclusive')
 
-        candidate = uri or image
         cache = current_app.config.get('cache')
-        cached_val = cache.get(candidate)
+        cached_val = cache.get(uri)
         if cached_val:
             return json.loads(cached_val), 201
 
         result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
-        classification_resp = dict(id=result.id, status='PENDING', candidate=candidate)
-        cache.add(candidate, json.dumps(classification_resp), ttl=1800)
+        classification_resp = dict(id=result.id, status='PENDING', candidate=uri)
+        cache.add(uri, json.dumps(classification_resp), ttl=1800)
         _logger.info('{}'.format(classification_resp))
 
         return classification_resp, 201
@@ -269,26 +251,3 @@ class ClassificationResult(Resource):
             return res
 
         return dict(id=jid, status=status)
-
-
-@api.route('/fingerprint', endpoint='add')
-class AddNewImage(Resource):
-
-    @api.expect(image_data_input)
-    @api.response(201, 'Success')
-    @api.response(400, 'Validation Error')
-    @api.response(401, 'Unauthorized')
-    @api.doc(security='apikey')
-    @token_required
-    def put(self):
-        """
-        Add a classification for an existing DCU image
-        Hashes an existing DCU image for use in future classification requests
-        """
-        # Currently we don't return success/failure statuses to clients. The code below could be utilized to achieve
-        # this goal but is currently not utilized.
-
-        payload = request.json
-        current_app.config.get('celery').send_task(FINGERPRINT_ROUTE, args=(payload,))
-
-        return None, 201
