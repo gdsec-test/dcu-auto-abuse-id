@@ -8,7 +8,7 @@ SHELL=/bin/bash
 
 # libraries we need to stage for pip to install inside Docker build
 PRIVATE_PIPS="git@github.secureserver.net:auth-contrib/PyAuth.git" \
-git@github.secureserver.net:digital-crimes/dcdatabase.git
+"git@github.secureserver.net:digital-crimes/dcdatabase.git;d15d3da5e2ad5c352fbe4f6a5ce6d40778020b7c"
 
 all: env
 
