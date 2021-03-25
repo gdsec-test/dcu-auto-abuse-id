@@ -61,11 +61,11 @@ Environment variables for docker-compose:
 Changes to docker-compose.yml file:
 1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
 
-Run `docker-compose up -d` to run auto_abuse_id, dcu-classifier, dcu-scanner, rabbitmq and redis locally.
-Run `docker logs -f auto_abuse_id_auto-abuse-id_1` to view the run logs for auto_abuse_id
-Run `docker logs -f auto_abuse_id_rabbitmq_1` to view the run logs for rabbitmq
-Run `redis-cli` to interact with your local REDIS instance
-Browse to `127.0.0.1:15672` with creds `guest:guest` to view the management console for your local RabbitMQ
+* Run `docker-compose up -d` to run auto_abuse_id, dcu-classifier, dcu-scanner, rabbitmq and redis locally.
+* Run `docker logs -f auto_abuse_id_auto-abuse-id_1` to view the run logs for auto_abuse_id
+* Run `docker logs -f auto_abuse_id_rabbitmq_1` to view the run logs for rabbitmq
+* Run `redis-cli` to interact with your local REDIS instance
+* Browse to `127.0.0.1:15672` with creds `guest:guest` to view the management console for your local RabbitMQ
 
 ### Debug auto_abuse_id locally, running against docker-compose dcu-classifier, dcu-scanner, rabbitmq and redis, and dev mongo
 
@@ -76,7 +76,7 @@ Environment variables for docker-compose:
 Changes to docker-compose.yml file:
 1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
 
-Run `docker-compose up -d dcu-classifier dcu-scanner rabbitmq redis`
+* Run `docker-compose up -d dcu-classifier dcu-scanner rabbitmq redis`
 
 Environment variables for debugging auto-abuse-id (ie: PyCharm)
 1. `sysenv` Runtime env: `dev`
