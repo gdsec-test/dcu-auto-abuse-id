@@ -1,46 +1,35 @@
-# AUTO_ABUSE_ID
-#
-#
+FROM python:3.7.10-slim as base
+LABEL MAINTAINER="dcueng@godaddy.com"
 
-FROM alpine:3.9
-MAINTAINER DCUENG <DCUEng@godaddy.com>
+RUN addgroup dcu && adduser --disabled-password --disabled-login --no-create-home --ingroup dcu --system dcu
+RUN apt-get update && apt-get install -y gcc
 
-RUN addgroup -S dcu && adduser -H -S -G dcu dcu
-# apt-get installs
-RUN apk update && \
-    apk add --no-cache build-base \
-    ca-certificates \
-    libffi-dev \
-    linux-headers \
-    openssl-dev \
-    python-dev \
-    py-pip
+RUN pip install -U pip
+COPY ./private_pips /tmp/private_pips
+RUN pip install --compile /tmp/private_pips/dcdatabase
+RUN pip install --compile /tmp/private_pips/PyAuth
 
-WORKDIR /tmp
+FROM base as deliverable
 
 # Move files to new dir
-ADD . /tmp
+RUN mkdir -p /app
+COPY ./*.ini ./*.py ./logging.yaml /app/
 
-# pip install private pips staged by Makefile
-RUN for entry in PyAuth dcdatabase; \
-    do \
-    pip install --compile "/tmp/private_pips/$entry"; \
-    done
-
-# install other requirements
-RUN pip install --compile /tmp
+# Compile the Flask API
+RUN mkdir /tmp/build
+COPY . /tmp/build
+RUN pip install --compile /tmp/build
 
 # Expose Flask port 5000
 EXPOSE 5000
 
-# Move files to new dir
-RUN mkdir -p /app
-COPY ./*.ini ./*.py ./logging.yaml ./runserver.sh /app/
-RUN chown -R dcu:dcu /app
-
 # cleanup
+RUN apt-get remove --purge -y gcc
 RUN rm -rf /tmp
+
+# Fix permissions.
+RUN chown -R dcu:dcu /app
 
 WORKDIR /app
 
-ENTRYPOINT ["/app/runserver.sh"]
+ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/app/uwsgi.ini", "--need-app"]

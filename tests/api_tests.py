@@ -7,8 +7,9 @@ from flask_testing.utils import TestCase
 from mock import MagicMock, patch
 
 import service.rest
-from mock_redis import MockRedis
 from settings import config_by_name
+
+from .mock_redis import MockRedis
 
 
 class TestRest(TestCase):

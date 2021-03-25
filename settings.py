@@ -1,6 +1,6 @@
 import os
-import urllib
 from collections import defaultdict
+from urllib.parse import quote
 
 
 class AppConfig(object):
@@ -14,9 +14,10 @@ class AppConfig(object):
     AUTH_GROUPS = defaultdict(list)
 
     def __init__(self):
-        self.DB_PASS = urllib.quote(os.getenv('DB_PASS', 'password'))
-        self.DBURL = 'mongodb://{}:{}@{}/{}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
+        self.DB_PASS = quote(os.getenv('DB_PASS', 'password'))
+        self.DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
         self.AUTH_GROUPS['add'] = ['DCU-Phishstory']
+        self.CACHE_SERVICE = os.getenv('REDIS', 'localhost')
 
 
 class ProductionAppConfig(AppConfig):
@@ -24,7 +25,6 @@ class ProductionAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_p_phish'
     TOKEN_AUTHORITY = 'sso.godaddy.com'
-    CACHE_SERVICE = 'auto-abuse-id-cache.abuse-api-prod.svc.cluster.local'
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -35,7 +35,6 @@ class OTEAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_o_phish'
     TOKEN_AUTHORITY = 'sso.ote-godaddy.com'
-    CACHE_SERVICE = 'auto-abuse-id-cache.abuse-api-ote.svc.cluster.local'
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -46,7 +45,6 @@ class DevelopmentAppConfig(AppConfig):
     DB_HOST = '10.36.156.188'
     DB_USER = 'devuser'
     TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
-    CACHE_SERVICE = 'auto-abuse-id-cache.abuse-api-dev.svc.cluster.local'
 
     def __init__(self):
         super(DevelopmentAppConfig, self).__init__()

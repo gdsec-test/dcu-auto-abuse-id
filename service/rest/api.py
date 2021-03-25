@@ -11,6 +11,9 @@ from service.rest.helpers import validate_payload
 
 _logger = logging.getLogger(__name__)
 
+FULL_DAY = 86400
+HALF_HOUR = 1800
+
 # Phash celery endpoints
 CLASSIFY_ROUTE = 'classify.request'
 SCAN_ROUTE = 'scan.request'
@@ -144,12 +147,15 @@ class IntakeScan(Resource):
     @token_required
     def post(self):
         """
-        Submit URI for scanning and potential Abuse API ticket creation
+        Submit URI for scanning and potential Abuse API ticket creation.
+        Writes entry to REDIS using URI as key, which lasts 30 minutes. If another request for
+        the same URI is received within 30 minutes, the REDIS record is returned.
         """
         payload = request.json
+        _logger.info('Provided Payload for scan: {}'.format(payload))
         validate_payload(payload, scan_input)
-
         uri = payload.get('uri')
+
         cache = current_app.config.get('cache')
         cached_val = cache.get(uri)
         if cached_val:
@@ -157,7 +163,7 @@ class IntakeScan(Resource):
 
         result = current_app.config.get('celery').send_task(SCAN_ROUTE, args=(payload,))
         scan_resp = dict(id=result.id, status='PENDING', uri=uri, sitemap=payload.get('sitemap'))
-        cache.add(uri, json.dumps(scan_resp), ttl=86400)
+        cache.add(uri, json.dumps(scan_resp), ttl=FULL_DAY)
         _logger.info('{}'.format(scan_resp))
 
         return scan_resp, 201
@@ -174,19 +180,21 @@ class ScanResult(Resource):
     @token_required
     def get(self, jid):
         """
-        Obtain the results or status of a previously submitted scan request
+        Obtain the results or status of a previously submitted scan request.
+        Writes entry to REDIS using JID as key, which lasts for 24 hours. Any requests received
+        for the same JID within that 24 hour window will receive the record data from REDIS.
         """
         cache = current_app.config.get('cache')
         cached_val = cache.get(jid)
         if cached_val:
-            return json.loads(cached_val)
+            return json.loads(cached_val), 200
 
         asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
             res['status'] = status
-            cache.add(jid, json.dumps(res), ttl=86400)
+            cache.add(jid, json.dumps(res), ttl=FULL_DAY)
             return res
 
         return dict(id=jid, status=status)
@@ -204,10 +212,13 @@ class IntakeResource(Resource):
     @token_required
     def post(self):
         """
-        Submit URI for auto detection and classification
-        Endpoint to handle intake of URIs reported as possibly containing abuse
+        Submit URI for auto detection and classification.
+        Endpoint to handle intake of URIs reported as possibly containing abuse.
+        Writes entry to REDIS using URI as key, which lasts 30 minutes. If another request for
+        the same URI is received within 30 minutes, the REDIS record is returned.
         """
         payload = request.json
+        _logger.info('Provided Payload for classification: {}'.format(payload))
         validate_payload(payload, classify_input)
         uri = payload.get('uri')
 
@@ -218,7 +229,7 @@ class IntakeResource(Resource):
 
         result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
         classification_resp = dict(id=result.id, status='PENDING', candidate=uri)
-        cache.add(uri, json.dumps(classification_resp), ttl=1800)
+        cache.add(uri, json.dumps(classification_resp), ttl=HALF_HOUR)
         _logger.info('{}'.format(classification_resp))
 
         return classification_resp, 201
@@ -235,19 +246,21 @@ class ClassificationResult(Resource):
     @token_required
     def get(self, jid):
         """
-        Obtain the results or status of a previously submitted classification request
+        Obtain the results or status of a previously submitted classification request.
+        Writes entry to REDIS using JID as key, which lasts for 24 hours. Any requests received
+        for the same JID within that 24 hour window will receive the record data from REDIS.
         """
         cache = current_app.config.get('cache')
         cached_val = cache.get(jid)
         if cached_val:
-            return json.loads(cached_val)
+            return json.loads(cached_val), 200
 
         asyn_res = current_app.config.get('celery').AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
             res['status'] = status
-            cache.add(jid, json.dumps(res), ttl=86400)
+            cache.add(jid, json.dumps(res), ttl=FULL_DAY)
             return res
 
         return dict(id=jid, status=status)

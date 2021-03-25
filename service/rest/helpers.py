@@ -1,6 +1,6 @@
 from flask_restplus import abort, fields
 
-from custom_fields import CustomField
+from .custom_fields import CustomField
 
 
 def validate_payload(payload, api_model):

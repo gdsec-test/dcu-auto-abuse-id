@@ -1,0 +1,29 @@
+services:
+  auto-abuse-id:
+    image: docker-dcu-local.artifactory.secureserver.net/auto_abuse_id:dev
+    environment:
+      REDIS: redis
+      sysenv: ${sysenv}
+      DB_PASS: ${DB_PASS}
+      BROKER_PASS: ${BROKER_PASS}
+      BROKER_URL: amqp://guest@rabbitmq:5672//
+      DISABLESSL: 'True'
+    ports:
+      - 127.0.0.1:5000:5000/tcp
+    links:
+      - redis:redis
+      - rabbitmq:rabbitmq
+    depends_on:
+      - rabbitmq
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:3.8.14-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  redis:
+    image: redis:6.2.1
+    ports:
+      - 6379:6379

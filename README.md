@@ -46,13 +46,31 @@ make tools   # Runs both Flake8 and isort
 ## Built With
 Auto Abuse ID is built utilizing the following key technologies
 1. dcdatabase
+2. PyAuth
  
 ## Running Locally
+
+### Docker-compose, local docker images for auto_abuse_id, rabbitmq and redis
+Run `docker-compose up -d` to run auto_abuse_id, rabbitmq and redis locally.
+Run `docker logs -f auto-abuse-id-HASH` to view the run logs for auto_abuse_id
+Run `redis-cli` to interact with your local REDIS instance
+Browse to `127.0.0.1:15672` with creds `guest:guest` to view the management console for your local RabbitMQ
+
+### Debug auto_abuse_id locally, running against docker-compose redis and rabbitmq, and dev mongo
+Run `docker-compose up -d rabbitmq redis`
+1. `sysenv` Runtime env: `dev`
+2. `BROKER_URL` URL of RabbitMQ run via docker-compose: `amqp://guest@localhost:5672//`
+3. `DB_PASS` Password for dev instance of MongoDB
+4. `DISABLESSL` We dont need an ssl connection to local RabbitMQ: `False`
+5. `REDIS` URI of REDIS run via docker-compose: `localhost`
+
+### Debug auto_abuse_id locally, running against local redis and dev rabbitmq and dev mongo
 If you would like to run auto_abuse_id locally, you will need to specify the following environment variables
 1. `sysenv` (test, dev, ote, prod)
    1. If running as `test`, you'll need an instance of MongoDB running on port 27017 and an instance of Redis Server running on port 6379.  MongoDB will need to have a `devphishstory` database with a `test` collection contained within it.  There should be no mongodb authentication.
 2. `BROKER_PASS` RabbitMQ password for the `02d1081iywc7A` user
 3. `DB_PASS` if running with a `dev`, `ote` or `prod` value for `sysenv`
+4. `REDIS` suggest a value of `localhost` to run against a local instance
  
 ### usage:
 To request clasification of a URI, run the following curl command:
@@ -68,6 +86,8 @@ The result will contain a job id `id`.  Use that `id` in the next call, which wi
 
     curl --location --request GET 'http://127.0.0.1:5000/classify/classification/JID' \
     --header 'Authorization: sso-jwt YOUR_JWT'
+
+Process will write to `sysenv` mongo instance.
 
 ## CURL test on PROD
 To run from this against prod, you'll need to auth with a current JWT from a user in one of the groups identified [here](https://github.secureserver.net/digital-crimes/auto_abuse_id/blob/master/settings.py#L19)

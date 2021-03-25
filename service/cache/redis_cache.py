@@ -2,7 +2,7 @@ import logging
 
 from redis import Redis
 
-from interface.cache import Cache
+from .interface.cache import Cache
 
 
 class RedisCache(Cache):
@@ -12,7 +12,7 @@ class RedisCache(Cache):
         try:
             self._redis = Redis(connection_str)
         except Exception as e:
-            self._logger.fatal('Error in creating redis connection: {}'.format(e.message))
+            self._logger.fatal('Error in creating redis connection: {}'.format(e))
 
     def get(self, redis_key):
         try:
@@ -26,4 +26,4 @@ class RedisCache(Cache):
             self._redis.set(key, data)
             self._redis.expire(key, ttl)
         except Exception as e:
-            self._logger.error("Error in setting the redis value for {} : {}".format(key.decode('utf-8'), e.message))
+            self._logger.error("Error in setting the redis value for {} : {}".format(key.decode('utf-8'), e))

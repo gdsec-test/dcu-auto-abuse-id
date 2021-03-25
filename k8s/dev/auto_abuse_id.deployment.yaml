@@ -36,6 +36,8 @@ spec:
             value: 'THIS_STRING_IS_REPLACED_DURING_BUILD'
           - name: sysenv
             value: dev
+          - name: REDIS
+            value: auto-abuse-id-cache.abuse-api-dev.svc.cluster.local
           - name: BROKER_PASS
             valueFrom:
               secretKeyRef:

@@ -8,9 +8,6 @@ __pycache__/
 # C extensions
 *.so
 
-# compose files
-docker-compose.yml
-
 # VSCode
 .vscode
 

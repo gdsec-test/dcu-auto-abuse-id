@@ -61,6 +61,9 @@ class MockRedis(object):
     def set(self, key, data):
         self.redis[key] = data
 
+    def expire(self, key, ttl=0):
+        pass
+
     def keys(self, pattern):  # pylint: disable=R0201
         """Emulate keys."""
         import re

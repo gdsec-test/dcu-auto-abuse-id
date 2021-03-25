@@ -1,20 +1,20 @@
 import os
-import urllib
+from urllib.parse import quote
 
 from kombu import Exchange, Queue
 
 
 class CeleryConfig:
-    BROKER_TRANSPORT = 'pyamqp'
-    BROKER_USE_SSL = True
-    CELERYD_CONCURRENCY = 1
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT = ['json', 'pickle']
-    CELERY_IMPORTS = 'run'
-    CELERYD_HIJACK_ROOT_LOGGER = False
-    CELERY_SEND_EVENTS = False
-    CELERY_TRACK_STARTED = True
+    broker_transport = 'pyamqp'
+    broker_use_ssl = not os.getenv('DISABLESSL', False)  # True unless local docker-compose testing
+    worker_concurrency = 1
+    task_serializer = 'json'
+    result_serializer = 'json'
+    accept_content = ['json', 'pickle']
+    imports = 'run'
+    worker_hijack_root_logger = False
+    worker_send_task_events = False
+    task_track_started = True
 
     @staticmethod
     def _getqueues(env):
@@ -41,14 +41,16 @@ class CeleryConfig:
         }
 
     def __init__(self, settings):
-        self.BROKER_PASS = urllib.quote(os.getenv('BROKER_PASS', 'password'))
-        self.BROKER_URL = 'amqp://02d1081iywc7A:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
+        self.broker_url = os.getenv('BROKER_URL')  # For local docker-compose testing
+        if not self.broker_url:
+            self.BROKER_PASS = quote(os.getenv('BROKER_PASS', 'password'))
+            self.broker_url = 'amqp://02d1081iywc7A:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
 
-        self.CELERY_RESULT_BACKEND = settings.DBURL
-        self.CELERY_MONGODB_BACKEND_SETTINGS = {
+        self.result_backend = settings.DBURL
+        self.mongodb_backend_settings = {
             'database': settings.DB,
             'taskmeta_collection': 'classifier-celery'
         }
-        env = os.getenv('sysenv', 'test')
-        self.CELERY_QUEUES = CeleryConfig._getqueues(env)
-        self.CELERY_ROUTES = CeleryConfig._getroutes(env)
+        env = os.getenv('sysenv', 'dev')
+        self.task_queues = CeleryConfig._getqueues(env)
+        self.task_routes = CeleryConfig._getroutes(env)
