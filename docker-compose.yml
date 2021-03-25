@@ -3,9 +3,8 @@ services:
     image: docker-dcu-local.artifactory.secureserver.net/auto_abuse_id:dev
     environment:
       REDIS: redis
-      sysenv: ${sysenv}
+      sysenv: dev
       DB_PASS: ${DB_PASS}
-      BROKER_PASS: ${BROKER_PASS}
       BROKER_URL: amqp://guest@rabbitmq:5672//
       DISABLESSL: 'True'
     ports:
@@ -16,6 +15,44 @@ services:
     depends_on:
       - rabbitmq
       - redis
+
+  dcu-classifier:
+    image: docker-dcu-local.artifactory.secureserver.net/dcu-classifier:dev
+    environment:
+      sysenv: dev
+      LOG_LEVEL: DEBUG
+      DB_PASS: ${DB_PASS}
+      WORKER_MODE: 'classify'
+      ML_API_CERT: /tmp/certs/apiuser.cmap.int.dev-godaddy.com.crt
+      ML_API_KEY: /tmp/certs/apiuser.cmap.int.dev-godaddy.com.key
+      API_JWT: ${API_JWT}
+      BROKER_URL: amqp://guest@rabbitmq:5672//
+      DISABLESSL: 'True'
+    volumes:
+      - /PATH_TO_YOUR_CERTS_DIRECTORY/:/tmp/certs/
+    links:
+      - rabbitmq:rabbitmq
+    depends_on:
+      - rabbitmq
+
+  dcu-scanner:
+    image: docker-dcu-local.artifactory.secureserver.net/dcu-classifier:dev
+    environment:
+      sysenv: dev
+      LOG_LEVEL: DEBUG
+      DB_PASS: ${DB_PASS}
+      WORKER_MODE: 'scan'
+      ML_API_CERT: /tmp/certs/apiuser.cmap.int.dev-godaddy.com.crt
+      ML_API_KEY: /tmp/certs/apiuser.cmap.int.dev-godaddy.com.key
+      API_JWT: ${API_JWT}
+      BROKER_URL: amqp://guest@rabbitmq:5672//
+      DISABLESSL: 'True'
+    volumes:
+      - /PATH_TO_YOUR_CERTS_DIRECTORY/:/tmp/certs/
+    links:
+      - rabbitmq:rabbitmq
+    depends_on:
+      - rabbitmq
 
   rabbitmq:
     image: rabbitmq:3.8.14-management

@@ -33,7 +33,7 @@ make testcov  # runs tests with coverage
 ```
 
 ## Style and Standards
-All deploys must pass Flake8 linting and all unit tests which are baked into the [Makefile](Makfile).
+All deploys must pass Flake8 linting and all unit tests which are baked into the [Makefile](Makefile).
 
 There are a few commands that might be useful to ensure consistent Python style:
 
@@ -50,21 +50,42 @@ Auto Abuse ID is built utilizing the following key technologies
  
 ## Running Locally
 
-### Docker-compose, local docker images for auto_abuse_id, rabbitmq and redis
-Run `docker-compose up -d` to run auto_abuse_id, rabbitmq and redis locally.
-Run `docker logs -f auto-abuse-id-HASH` to view the run logs for auto_abuse_id
+`Auto Abuse ID` is made to run in parallel with `DCU Classifier` services (`classify` and/or `scan`)
+
+### Docker-compose, local docker images for auto_abuse_id, dcu-classifier, dcu-scanner, rabbitmq and redis, and dev mongo
+
+Environment variables for docker-compose:
+1. `DB_PASS` (Password for dev MongoDB)
+2. `API_JWT` (JWT for user who can create Abuse API tickets from dcu-scanner)
+
+Changes to docker-compose.yml file:
+1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
+
+Run `docker-compose up -d` to run auto_abuse_id, dcu-classifier, dcu-scanner, rabbitmq and redis locally.
+Run `docker logs -f auto_abuse_id_auto-abuse-id_1` to view the run logs for auto_abuse_id
+Run `docker logs -f auto_abuse_id_rabbitmq_1` to view the run logs for rabbitmq
 Run `redis-cli` to interact with your local REDIS instance
 Browse to `127.0.0.1:15672` with creds `guest:guest` to view the management console for your local RabbitMQ
 
-### Debug auto_abuse_id locally, running against docker-compose redis and rabbitmq, and dev mongo
-Run `docker-compose up -d rabbitmq redis`
+### Debug auto_abuse_id locally, running against docker-compose dcu-classifier, dcu-scanner, rabbitmq and redis, and dev mongo
+
+Environment variables for docker-compose:
+1. `DB_PASS` (Password for dev MongoDB)
+2. `API_JWT` (JWT for user who can create Abuse API tickets from dcu-scanner)
+
+Changes to docker-compose.yml file:
+1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
+
+Run `docker-compose up -d dcu-classifier dcu-scanner rabbitmq redis`
+
+Environment variables for debugging auto-abuse-id (ie: PyCharm)
 1. `sysenv` Runtime env: `dev`
 2. `BROKER_URL` URL of RabbitMQ run via docker-compose: `amqp://guest@localhost:5672//`
 3. `DB_PASS` Password for dev instance of MongoDB
 4. `DISABLESSL` We dont need an ssl connection to local RabbitMQ: `False`
 5. `REDIS` URI of REDIS run via docker-compose: `localhost`
 
-### Debug auto_abuse_id locally, running against local redis and dev rabbitmq and dev mongo
+### Debug auto_abuse_id locally, running against local redis and dev dcu-classifier, dcu-scanner, rabbitmq and dev mongo
 If you would like to run auto_abuse_id locally, you will need to specify the following environment variables
 1. `sysenv` (test, dev, ote, prod)
    1. If running as `test`, you'll need an instance of MongoDB running on port 27017 and an instance of Redis Server running on port 6379.  MongoDB will need to have a `devphishstory` database with a `test` collection contained within it.  There should be no mongodb authentication.
@@ -73,7 +94,7 @@ If you would like to run auto_abuse_id locally, you will need to specify the fol
 4. `REDIS` suggest a value of `localhost` to run against a local instance
  
 ### usage:
-To request clasification of a URI, run the following curl command:
+To request classification of a URI, run the following curl command:
 
     curl --location --request POST 'http://127.0.0.1:5000/classify/classification' \
     --header 'Authorization: sso-jwt YOUR_JWT' \
