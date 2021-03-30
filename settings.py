@@ -9,8 +9,6 @@ class AppConfig(object):
     DB_PORT = 27017
     DB_USER = 'dbuser'
     DB_HOST = 'localhost'
-    COLLECTION = 'fingerprints'
-    LOGGING_COLLECTION = 'logs'
     AUTH_GROUPS = defaultdict(list)
 
     def __init__(self):
@@ -56,7 +54,6 @@ class TestingConfig(AppConfig):
 
     def __init__(self):
         self.DBURL = 'mongodb://localhost/devphishstory'
-        self.COLLECTION = 'test'
         self.DB_HOST = 'localhost'
         self.DB_PORT = 27017
 

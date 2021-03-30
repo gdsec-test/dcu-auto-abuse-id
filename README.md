@@ -51,12 +51,14 @@ Auto Abuse ID is built utilizing the following key technologies
 ## Running Locally
 
 `Auto Abuse ID` is made to run in parallel with `DCU Classifier` services (`classify` and/or `scan`)
+*You need to be connected to the GoDaddy network (ie: VPN) because this reaches out to the ML API*
 
 ### Docker-compose, local docker images for auto_abuse_id, dcu-classifier, dcu-scanner, rabbitmq and redis, and dev mongo
 
 Environment variables for docker-compose:
 1. `DB_PASS` (Password for dev MongoDB)
-2. `API_JWT` (JWT for user who can create Abuse API tickets from dcu-scanner)
+2. `API_KEY` for DCU Abuse (Scan API) shopper
+3. `API_SECRET` for DCU Abuse (Scan API) shopper
 
 Changes to docker-compose.yml file:
 1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
@@ -71,7 +73,8 @@ Changes to docker-compose.yml file:
 
 Environment variables for docker-compose:
 1. `DB_PASS` (Password for dev MongoDB)
-2. `API_JWT` (JWT for user who can create Abuse API tickets from dcu-scanner)
+2. `API_KEY` for DCU Abuse (Scan API) shopper
+3. `API_SECRET` for DCU Abuse (Scan API) shopper
 
 Changes to docker-compose.yml file:
 1. Replace `PATH_TO_YOUR_CERTS_DIRECTORY` with your local path to the `apiuser.cmap.int.dev-godaddy.com` crt and key files
