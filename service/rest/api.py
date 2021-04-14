@@ -13,10 +13,18 @@ _logger = logging.getLogger(__name__)
 
 FULL_DAY = 86400
 HALF_HOUR = 1800
+KEY_CACHE = 'cache'
+KEY_CELERY = 'celery'
+KEY_STATUS = 'status'
+KEY_URI = 'uri'
+PENDING = 'PENDING'
 
 # Phash celery endpoints
 CLASSIFY_ROUTE = 'classify.request'
 SCAN_ROUTE = 'scan.request'
+
+CLASSIFY_REDIS_PREFIX = 'clas'
+SCAN_REDIS_PREFIX = 'scan'
 
 
 api = Namespace('classify',
@@ -152,19 +160,20 @@ class IntakeScan(Resource):
         the same URI is received within 30 minutes, the REDIS record is returned.
         """
         payload = request.json
-        _logger.info('Provided Payload for scan: {}'.format(payload))
+        _logger.info(f'Provided Payload for scan: {payload}')
         validate_payload(payload, scan_input)
-        uri = payload.get('uri')
+        uri = payload.get(KEY_URI)
+        _unique_redis_key = f'{SCAN_REDIS_PREFIX}:{uri}'
 
-        cache = current_app.config.get('cache')
-        cached_val = cache.get(uri)
+        cache = current_app.config.get(KEY_CACHE)
+        cached_val = cache.get(_unique_redis_key)
         if cached_val:
             return json.loads(cached_val), 201
 
-        result = current_app.config.get('celery').send_task(SCAN_ROUTE, args=(payload,))
-        scan_resp = dict(id=result.id, status='PENDING', uri=uri, sitemap=payload.get('sitemap'))
-        cache.add(uri, json.dumps(scan_resp), ttl=FULL_DAY)
-        _logger.info('{}'.format(scan_resp))
+        result = current_app.config.get(KEY_CELERY).send_task(SCAN_ROUTE, args=(payload,))
+        scan_resp = dict(id=result.id, status=PENDING, uri=uri, sitemap=payload.get('sitemap'))
+        cache.add(_unique_redis_key, json.dumps(scan_resp), ttl=FULL_DAY)
+        _logger.info(f'{scan_resp}')
 
         return scan_resp, 201
 
@@ -184,17 +193,18 @@ class ScanResult(Resource):
         Writes entry to REDIS using JID as key, which lasts for 24 hours. Any requests received
         for the same JID within that 24 hour window will receive the record data from REDIS.
         """
-        cache = current_app.config.get('cache')
-        cached_val = cache.get(jid)
+        _unique_redis_key = f'{SCAN_REDIS_PREFIX}:{jid}'
+        cache = current_app.config.get(KEY_CACHE)
+        cached_val = cache.get(_unique_redis_key)
         if cached_val:
             return json.loads(cached_val), 200
 
-        asyn_res = current_app.config.get('celery').AsyncResult(jid)
+        asyn_res = current_app.config.get(KEY_CELERY).AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
-            res['status'] = status
-            cache.add(jid, json.dumps(res), ttl=FULL_DAY)
+            res[KEY_STATUS] = status
+            cache.add(_unique_redis_key, json.dumps(res), ttl=FULL_DAY)
             return res
 
         return dict(id=jid, status=status)
@@ -218,19 +228,20 @@ class IntakeResource(Resource):
         the same URI is received within 30 minutes, the REDIS record is returned.
         """
         payload = request.json
-        _logger.info('Provided Payload for classification: {}'.format(payload))
+        _logger.info(f'Provided Payload for classification: {payload}')
         validate_payload(payload, classify_input)
-        uri = payload.get('uri')
+        uri = payload.get(KEY_URI)
+        _unique_redis_key = f'{CLASSIFY_REDIS_PREFIX}:{uri}'
 
-        cache = current_app.config.get('cache')
-        cached_val = cache.get(uri)
+        cache = current_app.config.get(KEY_CACHE)
+        cached_val = cache.get(_unique_redis_key)
         if cached_val:
             return json.loads(cached_val), 201
 
-        result = current_app.config.get('celery').send_task(CLASSIFY_ROUTE, args=(payload,))
-        classification_resp = dict(id=result.id, status='PENDING', candidate=uri)
-        cache.add(uri, json.dumps(classification_resp), ttl=HALF_HOUR)
-        _logger.info('{}'.format(classification_resp))
+        result = current_app.config.get(KEY_CELERY).send_task(CLASSIFY_ROUTE, args=(payload,))
+        classification_resp = dict(id=result.id, status=PENDING, candidate=uri)
+        cache.add(_unique_redis_key, json.dumps(classification_resp), ttl=HALF_HOUR)
+        _logger.info(f'{classification_resp}')
 
         return classification_resp, 201
 
@@ -250,17 +261,18 @@ class ClassificationResult(Resource):
         Writes entry to REDIS using JID as key, which lasts for 24 hours. Any requests received
         for the same JID within that 24 hour window will receive the record data from REDIS.
         """
-        cache = current_app.config.get('cache')
-        cached_val = cache.get(jid)
+        _unique_redis_key = f'{CLASSIFY_REDIS_PREFIX}:{jid}'
+        cache = current_app.config.get(KEY_CACHE)
+        cached_val = cache.get(_unique_redis_key)
         if cached_val:
             return json.loads(cached_val), 200
 
-        asyn_res = current_app.config.get('celery').AsyncResult(jid)
+        asyn_res = current_app.config.get(KEY_CELERY).AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
-            res['status'] = status
-            cache.add(jid, json.dumps(res), ttl=FULL_DAY)
+            res[KEY_STATUS] = status
+            cache.add(_unique_redis_key, json.dumps(res), ttl=FULL_DAY)
             return res
 
         return dict(id=jid, status=status)
