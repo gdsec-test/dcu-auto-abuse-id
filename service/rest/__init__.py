@@ -1,4 +1,5 @@
 from celery import Celery
+from dcustructuredloggingflask.flasklogger import add_request_logging
 from flask import Flask
 from flask_restplus import Api
 
@@ -35,4 +36,10 @@ def create_app(config):
     app.config['celery'] = celery
     app.config['cache'] = RedisCache(config.CACHE_SERVICE)
     api.add_namespace(ns1)
+
+    add_request_logging(app, 'auto-abuse-api', sso=config.TOKEN_AUTHORITY, excluded_paths=[
+        '/doc/',
+        '/classify/health'
+    ], min_status_code=300)
+
     return app

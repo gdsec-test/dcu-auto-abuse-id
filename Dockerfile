@@ -8,12 +8,13 @@ RUN pip install -U pip
 COPY ./private_pips /tmp/private_pips
 RUN pip install --compile /tmp/private_pips/dcdatabase
 RUN pip install --compile /tmp/private_pips/PyAuth
+RUN pip3 install --compile /tmp/private_pips/dcu-structured-logging-flask
 
 FROM base as deliverable
 
 # Move files to new dir
 RUN mkdir -p /app
-COPY ./*.ini ./*.py ./logging.yaml /app/
+COPY ./*.ini ./*.py /app/
 
 # Compile the Flask API
 RUN mkdir /tmp/build
