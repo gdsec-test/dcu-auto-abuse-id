@@ -5,10 +5,6 @@ RUN addgroup dcu && adduser --disabled-password --disabled-login --no-create-hom
 RUN apt-get update && apt-get install -y gcc
 
 RUN pip install -U pip
-COPY ./private_pips /tmp/private_pips
-RUN pip install --compile /tmp/private_pips/dcdatabase
-RUN pip install --compile /tmp/private_pips/PyAuth
-RUN pip3 install --compile /tmp/private_pips/dcu-structured-logging-flask
 
 FROM base as deliverable
 
@@ -19,7 +15,7 @@ COPY ./*.ini ./*.py /app/
 # Compile the Flask API
 RUN mkdir /tmp/build
 COPY . /tmp/build
-RUN pip install --compile /tmp/build
+RUN PIP_CONFIG_FILE=/tmp/build/pip_config/pip.conf pip install --compile /tmp/build
 
 # Expose Flask port 5000
 EXPOSE 5000
