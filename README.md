@@ -92,7 +92,7 @@ Environment variables for debugging auto-abuse-id (ie: PyCharm)
 If you would like to run auto_abuse_id locally, you will need to specify the following environment variables
 1. `sysenv` (test, dev, ote, prod)
    1. If running as `test`, you'll need an instance of MongoDB running on port 27017 and an instance of Redis Server running on port 6379.  MongoDB will need to have a `devphishstory` database with a `test` collection contained within it.  There should be no mongodb authentication.
-2. `BROKER_PASS` RabbitMQ password for the `02d1081iywc7A` user
+2. `BROKER_PASS` RabbitMQ password for the `02d1081iywc7Av2` user
 3. `DB_PASS` if running with a `dev`, `ote` or `prod` value for `sysenv`
 4. `REDIS` suggest a value of `localhost` to run against a local instance
  

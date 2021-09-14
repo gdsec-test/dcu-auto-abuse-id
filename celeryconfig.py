@@ -44,7 +44,7 @@ class CeleryConfig:
         self.broker_url = os.getenv('BROKER_URL')  # For local docker-compose testing
         if not self.broker_url:
             self.BROKER_PASS = quote(os.getenv('BROKER_PASS', 'password'))
-            self.broker_url = 'amqp://02d1081iywc7A:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
+            self.broker_url = 'amqp://02d1081iywc7Av2:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
 
         self.result_backend = settings.DBURL
         self.mongodb_backend_settings = {

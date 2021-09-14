@@ -41,7 +41,7 @@ spec:
           - name: BROKER_PASS
             valueFrom:
               secretKeyRef:
-                name: amqp-auto-abuse-id
+                name: amqp-shared-creds
                 key: password
           - name: DB_PASS
             valueFrom:
