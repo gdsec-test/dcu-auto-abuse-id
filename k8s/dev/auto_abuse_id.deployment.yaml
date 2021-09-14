@@ -46,5 +46,5 @@ spec:
           - name: DB_PASS
             valueFrom:
               secretKeyRef:
-                name: db-auto-abuse-id
+                name: db-phishstory-v2
                 key: password

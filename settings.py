@@ -21,7 +21,7 @@ class AppConfig(object):
 class ProductionAppConfig(AppConfig):
     DB = 'phishstory'
     DB_HOST = '10.22.9.209'
-    DB_USER = 'sau_p_phish'
+    DB_USER = 'sau_p_phishv2'
     TOKEN_AUTHORITY = 'sso.godaddy.com'
 
     def __init__(self):
