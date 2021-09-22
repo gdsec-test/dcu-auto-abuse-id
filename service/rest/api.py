@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask import current_app, request
 from flask_restplus import Namespace, Resource, fields
-from gd_auth.token import AuthToken
+from gd_auth.token import AuthToken, TokenBusinessLevel
 
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
@@ -122,6 +122,10 @@ def token_required(f):
 
         try:
             auth_token = AuthToken.parse(token, token_authority, 'auto-abuse-id', 'jomax')
+
+            # Throws on failure.
+            auth_token.is_expired(TokenBusinessLevel.LOW)
+
             if auth_groups[endpoint]:
                 if not set(auth_token.payload.get('groups')) & set(auth_groups[endpoint]):
                     return {'message': 'Authenticated user is not allowed access'}, 403
