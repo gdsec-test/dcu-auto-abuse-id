@@ -1,7 +1,8 @@
 import os
-from urllib.parse import quote
 
 from kombu import Exchange, Queue
+
+from settings import AppConfig
 
 
 class CeleryConfig:
@@ -40,11 +41,11 @@ class CeleryConfig:
             'scan.request': {'queue': queue_modifier + 'scan_tasks', 'routing_key': 'scan.request'}
         }
 
-    def __init__(self, settings):
+    def __init__(self, settings: AppConfig):
         self.broker_url = os.getenv('BROKER_URL')  # For local docker-compose testing
         if not self.broker_url:
-            self.BROKER_PASS = quote(os.getenv('BROKER_PASS', 'password'))
-            self.broker_url = 'amqp://02d1081iywc7Av2:' + self.BROKER_PASS + '@rmq-dcu.int.godaddy.com:5672/grandma'
+            self.BROKER_PASS = settings.BROKER_PASS
+            self.broker_url = settings.BROKER_URL
 
         self.result_backend = settings.DBURL
         self.mongodb_backend_settings = {
