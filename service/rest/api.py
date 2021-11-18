@@ -6,6 +6,7 @@ from flask import current_app, request
 from flask_restplus import Namespace, Resource, fields
 from gd_auth.token import AuthToken, TokenBusinessLevel
 
+from celeryconfig import get_celery
 from service.rest.custom_fields import Uri
 from service.rest.helpers import validate_payload
 
@@ -174,7 +175,7 @@ class IntakeScan(Resource):
         if cached_val:
             return json.loads(cached_val), 201
 
-        result = current_app.config.get(KEY_CELERY).send_task(SCAN_ROUTE, args=(payload,))
+        result = get_celery().send_task(SCAN_ROUTE, args=(payload,))
         scan_resp = dict(id=result.id, status=PENDING, uri=uri, sitemap=payload.get('sitemap'))
         cache.add(_unique_redis_key, json.dumps(scan_resp), ttl=FULL_DAY)
         _logger.info(f'{scan_resp}')
@@ -203,7 +204,7 @@ class ScanResult(Resource):
         if cached_val:
             return json.loads(cached_val), 200
 
-        asyn_res = current_app.config.get(KEY_CELERY).AsyncResult(jid)
+        asyn_res = get_celery().AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()
@@ -242,7 +243,7 @@ class IntakeResource(Resource):
         if cached_val:
             return json.loads(cached_val), 201
 
-        result = current_app.config.get(KEY_CELERY).send_task(CLASSIFY_ROUTE, args=(payload,))
+        result = get_celery().send_task(CLASSIFY_ROUTE, args=(payload,))
         classification_resp = dict(id=result.id, status=PENDING, candidate=uri)
         cache.add(_unique_redis_key, json.dumps(classification_resp), ttl=HALF_HOUR)
         _logger.info(f'{classification_resp}')
@@ -271,7 +272,7 @@ class ClassificationResult(Resource):
         if cached_val:
             return json.loads(cached_val), 200
 
-        asyn_res = current_app.config.get(KEY_CELERY).AsyncResult(jid)
+        asyn_res = get_celery().AsyncResult(jid)
         status = asyn_res.state
         if asyn_res.ready():
             res = asyn_res.get()

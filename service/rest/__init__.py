@@ -1,9 +1,7 @@
-from celery import Celery
 from dcustructuredloggingflask.flasklogger import add_request_logging
 from flask import Flask
 from flask_restplus import Api
 
-from celeryconfig import CeleryConfig
 from service.cache.redis_cache import RedisCache
 
 from .api import api as ns1
@@ -31,9 +29,6 @@ def create_app(config):
     )
     app.config['token_authority'] = config.TOKEN_AUTHORITY
     app.config['auth_groups'] = config.AUTH_GROUPS
-    celery = Celery()
-    celery.config_from_object(CeleryConfig(config))
-    app.config['celery'] = celery
     app.config['cache'] = RedisCache(config.CACHE_SERVICE)
     api.add_namespace(ns1)
 

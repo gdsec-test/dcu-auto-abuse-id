@@ -1,5 +1,6 @@
 import os
 
+from celery import Celery
 from kombu import Exchange, Queue
 
 from settings import AppConfig
@@ -55,3 +56,9 @@ class CeleryConfig:
         env = os.getenv('sysenv', 'dev')
         self.task_queues = CeleryConfig._getqueues(env)
         self.task_routes = CeleryConfig._getroutes(env)
+
+
+def get_celery() -> Celery:
+    capp = Celery()
+    capp.config_from_object(CeleryConfig)
+    return capp
