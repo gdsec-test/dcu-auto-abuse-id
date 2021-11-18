@@ -3,7 +3,9 @@ import os
 from celery import Celery
 from kombu import Exchange, Queue
 
-from settings import AppConfig
+from settings import AppConfig, config_by_name
+
+config = config_by_name[os.getenv('sysenv', 'dev')]()
 
 
 class CeleryConfig:
@@ -60,5 +62,5 @@ class CeleryConfig:
 
 def get_celery() -> Celery:
     capp = Celery()
-    capp.config_from_object(CeleryConfig)
+    capp.config_from_object(CeleryConfig(config))
     return capp
