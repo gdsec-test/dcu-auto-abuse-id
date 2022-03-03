@@ -48,3 +48,13 @@ spec:
               secretKeyRef:
                 name: db-phishstory-v2
                 key: password
+          - name: ELASTIC_APM_SERVER_URL
+            valueFrom:
+              secretKeyRef:
+                name: apm-access
+                key: url
+          - name: ELASTIC_APM_SECRET_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: apm-access
+                key: secret

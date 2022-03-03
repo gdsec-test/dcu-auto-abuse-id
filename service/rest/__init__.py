@@ -1,4 +1,7 @@
+import os
+
 from dcustructuredloggingflask.flasklogger import add_request_logging
+from elasticapm.contrib.flask import ElasticAPM
 from flask import Flask
 from flask_restplus import Api
 
@@ -9,6 +12,8 @@ from .api import api as ns1
 
 def create_app(config):
     app = Flask(__name__)
+    apm = ElasticAPM()
+    apm.init_app(app, service_name='auto-abuse-id', debug=True, environment=os.getenv('sysenv', 'dev'))
     app.config.SWAGGER_UI_JSONEDITOR = True
     app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
     authorizations = {
