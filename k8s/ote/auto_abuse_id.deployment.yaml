@@ -38,11 +38,22 @@ spec:
             value: ote
           - name: REDIS
             value: auto-abuse-id-cache.abuse-api-ote.svc.cluster.local
-          - name: BROKER_PASS
+          # TODO CMAPT-5032: remove single_broker and queue_type
+          - name: QUEUE_TYPE
+            valueFrom:
+              configMapKeyRef:
+                name: quorum-migration
+                key: queuetype
+          - name: SINGLE_BROKER
+            valueFrom:
+              secretKeyRef:
+                name: amqp-connection-string-v2
+                key: url
+          - name: MULTIPLE_BROKERS
             valueFrom:
               secretKeyRef:
                 name: amqp-shared-creds
-                key: password
+                key: multiple_brokers_grandma
           - name: DB_PASS
             valueFrom:
               secretKeyRef:

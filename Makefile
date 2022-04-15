@@ -71,7 +71,7 @@ dev: prep
 prod-deploy: prod
 	@echo "----- deploying $(REPONAME) prod -----"
 	docker push $(DOCKERREPO):$(COMMIT)
-	kubectl --context prod-dcu apply -f $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yaml --record
+	kubectl --context prod-admin apply -f $(BUILDROOT)/k8s/prod/auto_abuse_id.deployment.yaml --record
 
 .PHONY: ote-deploy
 ote-deploy: ote
@@ -83,7 +83,7 @@ ote-deploy: ote
 dev-deploy: dev
 	@echo "----- deploying $(REPONAME) dev -----"
 	docker push $(DOCKERREPO):dev
-	kubectl --context dev-dcu apply -f $(BUILDROOT)/k8s/dev/auto_abuse_id.deployment.yaml --record
+	kubectl --context dev-admin apply -f $(BUILDROOT)/k8s/dev/auto_abuse_id.deployment.yaml --record
 
 .PHONY: clean
 clean:
