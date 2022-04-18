@@ -23,8 +23,8 @@ class CeleryConfig:
     WORKER_ENABLE_REMOTE_CONTROL = False
 
     @staticmethod
-    # TODO CMAPT-5032: remove queue_type argument
-    def _getqueues(env, queue_type):
+    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
+    def _getqueues(env, queue_args):
         queue_modifier = ''
         exchange = 'classifier'
         if env != 'prod':
@@ -32,24 +32,24 @@ class CeleryConfig:
             exchange = env + exchange
         return (
             Queue(queue_modifier + 'classify_tasks', exchange=Exchange(exchange, type='topic'),
-                  routing_key='classify.request', queue_arguments={'x-queue-type': queue_type}),
+                  routing_key='classify.request', queue_arguments=queue_args),
             Queue(queue_modifier + 'scan_tasks', exchange=Exchange(exchange, type='topic'),
-                  routing_key='scan.request', queue_arguments={'x-queue-type': queue_type})
+                  routing_key='scan.request', queue_arguments=queue_args)
         )
 
     @staticmethod
-    # TODO CMAPT-5032: remove queue_type argument
-    def _getroutes(env, queue_type):
+    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
+    def _getroutes(env, queue_args):
         queue_modifier = ''
         if env != 'prod':
             queue_modifier = env
         return {
             'classify.request':
                 {'queue': Queue(queue_modifier + 'classify_tasks', Exchange(queue_modifier + 'classify_tasks'),
-                                routing_key='classify.request', queue_arguments={'x-queue-type': queue_type})},
+                                routing_key='classify.request', queue_arguments=queue_args)},
             'scan.request':
                 {'queue': Queue(queue_modifier + 'scan_tasks', Exchange(queue_modifier + 'scan_tasks'),
-                                routing_key='scan.request', queue_arguments={'x-queue-type': queue_type})}
+                                routing_key='scan.request', queue_arguments=queue_args)}
         }
 
     def __init__(self, settings: AppConfig):
@@ -63,9 +63,11 @@ class CeleryConfig:
             'taskmeta_collection': 'classifier-celery'
         }
         env = os.getenv('sysenv', 'dev')
-        # TODO CMAPT-5032: remove queue_type argument
-        self.task_queues = CeleryConfig._getqueues(env, queue_type)
-        self.task_routes = CeleryConfig._getroutes(env, queue_type)
+
+        # TODO CMAPT-5032: queue_args argument
+        queue_args = {'x-queue-type': 'quorum'} if queue_type == 'quorum' else None
+        self.task_queues = CeleryConfig._getqueues(env, queue_args)
+        self.task_routes = CeleryConfig._getroutes(env, queue_args)
 
 
 def get_celery() -> Celery:
