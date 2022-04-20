@@ -12,6 +12,11 @@ FROM base as deliverable
 RUN mkdir -p /app
 COPY ./*.ini ./*.py /app/
 
+# install custom root certificates
+RUN mkdir -p /usr/local/share/ca-certificates/
+COPY certs /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
 # Compile the Flask API
 RUN mkdir /tmp/build
 COPY . /tmp/build

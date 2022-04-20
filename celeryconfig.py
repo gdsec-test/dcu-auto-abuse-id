@@ -20,9 +20,11 @@ class CeleryConfig:
     worker_hijack_root_logger = False
     worker_send_task_events = False
     task_track_started = True
+    WORKER_ENABLE_REMOTE_CONTROL = False
 
     @staticmethod
-    def _getqueues(env):
+    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
+    def _getqueues(env, queue_args):
         queue_modifier = ''
         exchange = 'classifier'
         if env != 'prod':
@@ -30,26 +32,30 @@ class CeleryConfig:
             exchange = env + exchange
         return (
             Queue(queue_modifier + 'classify_tasks', exchange=Exchange(exchange, type='topic'),
-                  routing_key='classify.request'),
+                  routing_key='classify.request', queue_arguments=queue_args),
             Queue(queue_modifier + 'scan_tasks', exchange=Exchange(exchange, type='topic'),
-                  routing_key='scan.request')
+                  routing_key='scan.request', queue_arguments=queue_args)
         )
 
     @staticmethod
-    def _getroutes(env):
+    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
+    def _getroutes(env, queue_args):
         queue_modifier = ''
         if env != 'prod':
             queue_modifier = env
         return {
-            'classify.request': {'queue': queue_modifier + 'classify_tasks', 'routing_key': 'classify.request'},
-            'scan.request': {'queue': queue_modifier + 'scan_tasks', 'routing_key': 'scan.request'}
+            'classify.request':
+                {'queue': Queue(queue_modifier + 'classify_tasks', Exchange(queue_modifier + 'classify_tasks'),
+                                routing_key='classify.request', queue_arguments=queue_args)},
+            'scan.request':
+                {'queue': Queue(queue_modifier + 'scan_tasks', Exchange(queue_modifier + 'scan_tasks'),
+                                routing_key='scan.request', queue_arguments=queue_args)}
         }
 
     def __init__(self, settings: AppConfig):
-        self.broker_url = os.getenv('BROKER_URL')  # For local docker-compose testing
-        if not self.broker_url:
-            self.BROKER_PASS = settings.BROKER_PASS
-            self.broker_url = settings.BROKER_URL
+        # TODO CMAPT-5032: remove QUEUE TYPE and just set broker url to multiple brokers
+        queue_type = os.getenv('QUEUE_TYPE')
+        self.broker_url = os.getenv('MULTIPLE_BROKERS') if queue_type == 'quorum' else os.getenv('SINGLE_BROKER')
 
         self.result_backend = settings.DBURL
         self.mongodb_backend_settings = {
@@ -57,8 +63,11 @@ class CeleryConfig:
             'taskmeta_collection': 'classifier-celery'
         }
         env = os.getenv('sysenv', 'dev')
-        self.task_queues = CeleryConfig._getqueues(env)
-        self.task_routes = CeleryConfig._getroutes(env)
+
+        # TODO CMAPT-5032: queue_args argument
+        queue_args = {'x-queue-type': 'quorum'} if queue_type == 'quorum' else None
+        self.task_queues = CeleryConfig._getqueues(env, queue_args)
+        self.task_routes = CeleryConfig._getroutes(env, queue_args)
 
 
 def get_celery() -> Celery:

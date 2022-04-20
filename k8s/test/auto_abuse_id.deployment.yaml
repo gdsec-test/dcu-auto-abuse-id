@@ -3,11 +3,11 @@ apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "auto-abuse-id"
-  namespace: "abuse-api-prod"
+  namespace: "abuse-api-test"
   labels:
     app: "auto-abuse-id"
 spec:
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 2
   selector:
     matchLabels:
@@ -24,7 +24,7 @@ spec:
         -
           name: "auto-abuse-id"
           imagePullPolicy: "Always"
-          image: "docker-dcu-local.artifactory.secureserver.net/auto_abuse_id:REPLACE_WITH_GIT_COMMIT"
+          image: "docker-dcu-local.artifactory.secureserver.net/auto_abuse_id:test"
           livenessProbe:
             httpGet:
               path: /classify/health
@@ -35,9 +35,9 @@ spec:
           - name: BUILD_DATE
             value: 'THIS_STRING_IS_REPLACED_DURING_BUILD'
           - name: sysenv
-            value: prod
+            value: test
           - name: REDIS
-            value: auto-abuse-id-cache.abuse-api-prod.svc.cluster.local
+            value: auto-abuse-id-cache.abuse-api-test.svc.cluster.local
           # TODO CMAPT-5032: remove single_broker and queue_type
           - name: QUEUE_TYPE
             valueFrom:
@@ -69,4 +69,3 @@ spec:
               secretKeyRef:
                 name: apm-access
                 key: secret
-
