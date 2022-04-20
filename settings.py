@@ -48,6 +48,16 @@ class DevelopmentAppConfig(AppConfig):
         super(DevelopmentAppConfig, self).__init__()
 
 
+class TestAppConfig(AppConfig):
+    DB = 'devphishstory'
+    DB_HOST = '10.36.156.188'
+    DB_USER = 'testuser'
+    TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
+
+    def __init__(self):
+        super(TestAppConfig, self).__init__()
+
+
 class TestingConfig(AppConfig):
     TOKEN_AUTHORITY = None
     CACHE_SERVICE = 'localhost'

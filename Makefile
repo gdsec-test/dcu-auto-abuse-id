@@ -24,8 +24,8 @@ isort:
 .PHONY: tools
 tools: flake8 isort
 
-.PHONY: test
-test:
+.PHONY: testing
+testing:
 	@echo "----- Running tests -----"
 	nosetests tests
 
@@ -36,7 +36,7 @@ testcov:
 
 
 .PHONY: prep
-prep: tools test
+prep: tools testing
 	@echo "----- preparing $(REPONAME) build -----"
 	mkdir -p $(BUILDROOT)
 	cp -rp ./* $(BUILDROOT)
@@ -67,6 +67,12 @@ dev: prep
 	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/g' $(BUILDROOT)/k8s/dev/auto_abuse_id.deployment.yaml
 	docker build -t $(DOCKERREPO):dev $(BUILDROOT)
 
+.PHONY: test
+test: prep
+	@echo "----- building $(REPONAME) test -----"
+	sed -ie 's/THIS_STRING_IS_REPLACED_DURING_BUILD/$(DATE)/g' $(BUILDROOT)/k8s/test/auto_abuse_id.deployment.yaml
+	docker build -t $(DOCKERREPO):test $(BUILDROOT)
+
 .PHONY: prod-deploy
 prod-deploy: prod
 	@echo "----- deploying $(REPONAME) prod -----"
@@ -84,6 +90,12 @@ dev-deploy: dev
 	@echo "----- deploying $(REPONAME) dev -----"
 	docker push $(DOCKERREPO):dev
 	kubectl --context dev-dcu apply -f $(BUILDROOT)/k8s/dev/auto_abuse_id.deployment.yaml --record
+
+.PHONY: test-deploy
+test-deploy: testing
+	@echo "----- deploying $(REPONAME) test -----"
+	docker push $(DOCKERREPO):test
+	kubectl --context test-dcu apply -f $(BUILDROOT)/k8s/test/auto_abuse_id.deployment.yaml --record
 
 .PHONY: clean
 clean:
