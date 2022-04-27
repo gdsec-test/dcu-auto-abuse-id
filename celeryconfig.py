@@ -20,7 +20,7 @@ class CeleryConfig:
     worker_hijack_root_logger = False
     worker_send_task_events = False
     task_track_started = True
-    WORKER_ENABLE_REMOTE_CONTROL = False
+    WORKER_ENABLE_REMOTE_CONTROL = True
 
     @staticmethod
     # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
