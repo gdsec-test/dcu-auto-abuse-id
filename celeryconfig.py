@@ -23,7 +23,6 @@ class CeleryConfig:
     WORKER_ENABLE_REMOTE_CONTROL = True
 
     @staticmethod
-    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
     def _getqueues(env, queue_args):
         queue_modifier = ''
         exchange = 'classifier'
@@ -38,7 +37,6 @@ class CeleryConfig:
         )
 
     @staticmethod
-    # TODO CMAPT-5032: remove queue_args argument and just set args to 'x-queue-type': 'quorum'
     def _getroutes(env, queue_args):
         queue_modifier = ''
         if env != 'prod':
@@ -53,9 +51,7 @@ class CeleryConfig:
         }
 
     def __init__(self, settings: AppConfig):
-        # TODO CMAPT-5032: remove QUEUE TYPE and just set broker url to multiple brokers
-        queue_type = os.getenv('QUEUE_TYPE')
-        self.broker_url = os.getenv('MULTIPLE_BROKERS') if queue_type == 'quorum' else os.getenv('SINGLE_BROKER')
+        self.broker_url = os.getenv('MULTIPLE_BROKERS')
 
         self.result_backend = settings.DBURL
         self.mongodb_backend_settings = {
@@ -64,8 +60,7 @@ class CeleryConfig:
         }
         env = os.getenv('sysenv', 'dev')
 
-        # TODO CMAPT-5032: queue_args argument
-        queue_args = {'x-queue-type': 'quorum'} if queue_type == 'quorum' else None
+        queue_args = {'x-queue-type': 'quorum'}
         self.task_queues = CeleryConfig._getqueues(env, queue_args)
         self.task_routes = CeleryConfig._getroutes(env, queue_args)
 
