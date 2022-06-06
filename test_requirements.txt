@@ -2,7 +2,6 @@ coverage==5.5
 flake8==3.8.4
 Flask-Testing==0.8.1
 isort==5.7.0
-MarkupSafe==1.1.1
 mccabe==0.6.1
 mock==4.0.3
 mongomock==3.22.1
