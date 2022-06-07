@@ -39,7 +39,6 @@ class ClassifyInput(Schema):
 def token_required(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        auth_groups = current_app.config.get('auth_groups')
         token_authority = current_app.config.get('token_authority')
 
         if not token_authority:  # bypass if no token authority is set
@@ -57,12 +56,9 @@ def token_required(f):
 
             # Throws on failure.
             auth_token.is_expired(TokenBusinessLevel.LOW)
-
-            if auth_token.payload.get('groups'):
-                if all(x not in auth_groups for x in auth_token.payload.get('groups')):
-                    return {'message': 'Authenticated user is not allowed access'}, 403
             _logger.debug('{}: authenticated'.format(auth_token.payload.get('accountName')))
-        except Exception:
+        except Exception as e:
+            _logger.exception(e)
             return {'message': 'Error in authorization'}, 401
         return f(*args, **kwargs)
     return wrapped

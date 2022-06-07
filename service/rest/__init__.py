@@ -16,7 +16,6 @@ def create_app(config):
     app.config.SWAGGER_UI_JSONEDITOR = True
     app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
     app.config['token_authority'] = config.TOKEN_AUTHORITY
-    app.config['auth_groups'] = config.AUTH_GROUPS
     app.config['cache'] = RedisCache(config.CACHE_SERVICE)
     app.register_blueprint(ns1)
 

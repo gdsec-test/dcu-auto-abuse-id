@@ -1,5 +1,4 @@
 import os
-from collections import defaultdict
 from urllib.parse import quote
 
 
@@ -9,12 +8,10 @@ class AppConfig(object):
     DB_PORT = 27017
     DB_USER = 'dbuser'
     DB_HOST = 'localhost'
-    AUTH_GROUPS = defaultdict(list)
 
     def __init__(self):
         self.DB_PASS = quote(os.getenv('DB_PASS', 'password'))
         self.DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
-        self.AUTH_GROUPS = ['DCU-Phishstory']
         self.CACHE_SERVICE = os.getenv('REDIS', 'localhost')
 
 
