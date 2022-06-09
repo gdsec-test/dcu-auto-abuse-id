@@ -1,7 +1,7 @@
-FROM python:3.7.10-slim as base
+FROM docker-dcu-local.artifactory.secureserver.net/dcu-python3.7:3.3
 LABEL MAINTAINER="dcueng@godaddy.com"
 
-RUN addgroup dcu && adduser --disabled-password --disabled-login --no-create-home --ingroup dcu --system dcu
+USER root
 RUN apt-get update && apt-get install -y gcc
 
 RUN pip install -U pip
@@ -33,5 +33,7 @@ RUN rm -rf /tmp
 RUN chown -R dcu:dcu /app
 
 WORKDIR /app
+
+USER dcu
 
 ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/app/uwsgi.ini", "--need-app"]

@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+- auto_abuse_id.ingress.yaml
+
+namespace: abuse-api-prod
+images:
+- name: docker-dcu-local.artifactory.secureserver.net/auto_abuse_id
+  newTag: prod
+replicas:
+  - count: 3
+    name: auto_abuse_id
+
+configMapGenerator:
+- literals:
+  - sysenv=prod
+  - REDIS=auto-abuse-id-cache.abuse-api-prod.svc.cluster.local
+  name: env-specific-values

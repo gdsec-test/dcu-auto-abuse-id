@@ -3,7 +3,6 @@ apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "auto-abuse-id-cache"
-  namespace: "abuse-api-ote"
   labels:
     app: "auto-abuse-id-cache"
 spec:
