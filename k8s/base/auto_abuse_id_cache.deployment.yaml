@@ -22,7 +22,6 @@ spec:
       containers:
         -
           name: "redis"
-          imagePullPolicy: "Always"
           image: "redis"
           ports:
             -

@@ -22,8 +22,10 @@ spec:
       containers:
         -
           name: "auto-abuse-id"
-          imagePullPolicy: "Always"
           image: "docker-dcu-local.artifactory.secureserver.net/auto_abuse_id"
+          envFrom:
+            - configMapRef:
+                name: env-specific-values
           livenessProbe:
             httpGet:
               path: /classify/health

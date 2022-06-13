@@ -11,11 +11,6 @@ RUN pip install -U pip
 RUN mkdir -p /app
 COPY ./*.ini ./*.py /app/
 
-# install custom root certificates
-RUN mkdir -p /usr/local/share/ca-certificates/
-COPY certs /usr/local/share/ca-certificates/
-RUN update-ca-certificates
-
 # Compile the Flask API
 RUN mkdir /tmp/build
 COPY . /tmp/build
@@ -33,4 +28,5 @@ RUN chown -R dcu:dcu /app
 
 WORKDIR /app
 
+USER dcu
 ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/app/uwsgi.ini", "--need-app"]
