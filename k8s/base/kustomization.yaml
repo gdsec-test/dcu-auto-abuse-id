@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ./auto_abuse_id.deployment.yaml
+- ./auto_abuse_id.service.yaml
+- ./auto_abuse_id_cache.deployment.yaml
+- ./auto_abuse_id_cache.service.yaml

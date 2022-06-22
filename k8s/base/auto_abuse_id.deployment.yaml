@@ -3,7 +3,6 @@ apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
   name: "auto-abuse-id"
-  namespace: "abuse-api-dev"
   labels:
     app: "auto-abuse-id"
 spec:
@@ -23,8 +22,10 @@ spec:
       containers:
         -
           name: "auto-abuse-id"
-          imagePullPolicy: "Always"
-          image: "docker-dcu-local.artifactory.secureserver.net/auto_abuse_id:dev"
+          image: "docker-dcu-local.artifactory.secureserver.net/auto_abuse_id"
+          envFrom:
+            - configMapRef:
+                name: env-specific-values
           livenessProbe:
             httpGet:
               path: /classify/health
@@ -32,12 +33,6 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
           env:
-          - name: BUILD_DATE
-            value: 'THIS_STRING_IS_REPLACED_DURING_BUILD'
-          - name: sysenv
-            value: dev
-          - name: REDIS
-            value: auto-abuse-id-cache.abuse-api-dev.svc.cluster.local
           - name: MULTIPLE_BROKERS
             valueFrom:
               secretKeyRef:
