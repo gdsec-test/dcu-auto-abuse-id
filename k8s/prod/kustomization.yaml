@@ -10,7 +10,7 @@ images:
   newTag: prod
 replicas:
   - count: 3
-    name: auto_abuse_id
+    name: auto-abuse-id
 
 configMapGenerator:
 - literals:
