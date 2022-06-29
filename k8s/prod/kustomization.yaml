@@ -9,8 +9,8 @@ images:
 - name: docker-dcu-local.artifactory.secureserver.net/auto_abuse_id
   newTag: prod
 replicas:
-  - count: 3
-    name: auto-abuse-id
+- count: 3
+  name: auto-abuse-id
 
 configMapGenerator:
 - literals:
