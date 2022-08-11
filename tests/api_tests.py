@@ -80,7 +80,7 @@ class TestRest(TestCase):
             state='SUCCESS',
             ready=lambda: True,
             get=lambda: dict(id='123', status='SUCCESS'))
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.get(
             url_for('classify.scan') + '/123',
             headers={
@@ -95,7 +95,7 @@ class TestRest(TestCase):
             state='SUCCESS',
             ready=lambda: True,
             get=lambda: dict(id='123', status='SUCCESS'))
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.get(
             url_for('classify.scan') + '/123',
             headers={
@@ -154,7 +154,7 @@ class TestRest(TestCase):
     def test_classify_uri_invalid_auth_key(self, send_task_method):
         send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
         data = dict(uri='https://localhost.com')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.post(
             url_for('classify.classification'),
             data=json.dumps(data),
@@ -168,7 +168,7 @@ class TestRest(TestCase):
     def test_classify_uri_missing_auth_key(self, send_task_method):
         send_task_method.return_value = namedtuple('Resp', 'id')('abc123')
         data = dict(uri='https://localhost.com')
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.post(
             url_for('classify.classification'),
             data=json.dumps(data),
@@ -183,7 +183,7 @@ class TestRest(TestCase):
             state='SUCCESS',
             ready=lambda: True,
             get=lambda: dict(id='some_id', status='SUCCESS'))
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.get(
             url_for('classify.classification') + '/some_id',
             headers={
@@ -198,7 +198,7 @@ class TestRest(TestCase):
             state='SUCCESS',
             ready=lambda: True,
             get=lambda: dict(id='some_id', status='SUCCESS'))
-        self.client.application.config['token_authority'] = 'sso.dev-godaddy.com'
+        self.client.application.config['token_authority'] = 'sso.dev-gdcorp.tools'
         response = self.client.get(
             url_for('classify.classification') + '/some_id',
             headers={

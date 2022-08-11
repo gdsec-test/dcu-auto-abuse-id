@@ -19,7 +19,7 @@ class ProductionAppConfig(AppConfig):
     DB = 'phishstory'
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_p_phishv2'
-    TOKEN_AUTHORITY = 'sso.godaddy.com'
+    TOKEN_AUTHORITY = 'sso.gdcorp.tools'
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -29,7 +29,7 @@ class OTEAppConfig(AppConfig):
     DB = 'otephishstory'
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_o_phish'
-    TOKEN_AUTHORITY = 'sso.ote-godaddy.com'
+    TOKEN_AUTHORITY = 'sso.ote-gdcorp.tools'
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -39,7 +39,7 @@ class DevelopmentAppConfig(AppConfig):
     DB = 'devphishstory'
     DB_HOST = '10.36.190.222'
     DB_USER = 'devuser'
-    TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
+    TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
 
     def __init__(self):
         super(DevelopmentAppConfig, self).__init__()
@@ -49,7 +49,7 @@ class TestAppConfig(AppConfig):
     DB = 'devphishstory'
     DB_HOST = '10.36.190.222'
     DB_USER = 'testuser'
-    TOKEN_AUTHORITY = 'sso.dev-godaddy.com'
+    TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
 
     def __init__(self):
         super(TestAppConfig, self).__init__()
