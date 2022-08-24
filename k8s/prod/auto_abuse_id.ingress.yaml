@@ -9,8 +9,18 @@ spec:
     - hosts:
       - "classify.int.godaddy.com"
       secretName: tls-auto-abuse-id
+    - hosts:
+      - "classify.cset.int.gdcorp.tools"
+      secretName: cset-wildcard
   rules:
   - host: "classify.int.godaddy.com"
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: "auto-abuse-id"
+          servicePort: 5000
+  - host: classify.cset.int.gdcorp.tools
     http:
       paths:
       - path: /
