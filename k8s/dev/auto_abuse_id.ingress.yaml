@@ -7,19 +7,9 @@ metadata:
 spec:
   tls:
     - hosts:
-      - "classify.int.dev-godaddy.com"
-      secretName: tls-auto-abuse-id
-    - hosts:
       - "classify.cset.int.dev-gdcorp.tools"
       secretName: cset-wildcard
   rules:
-  - host: "classify.int.dev-godaddy.com"
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: "auto-abuse-id"
-          servicePort: 5000
   - host: classify.cset.int.dev-gdcorp.tools
     http:
       paths:
