@@ -13,7 +13,10 @@ COPY requirements.txt /tmp/build/
 COPY pip_config /tmp/build/pip_config
 RUN PIP_CONFIG_FILE=/tmp/build/pip_config/pip.conf pip install -r /tmp/build/requirements.txt
 
-COPY . /tmp/build
+COPY *.py /tmp/build/
+COPY test_requirements.txt /tmp/build/
+COPY README.md /tmp/build/
+COPY service /tmp/build/service
 RUN PIP_CONFIG_FILE=/tmp/build/pip_config/pip.conf pip install --compile /tmp/build
 
 # Expose Flask port 5000
