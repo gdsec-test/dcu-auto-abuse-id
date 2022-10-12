@@ -22,3 +22,4 @@ six==1.15.0
 uWSGI==2.0.17.1
 vine==5.0.0
 Werkzeug==2.1.1
+importlib-metadata<5.0

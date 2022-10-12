@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask import Blueprint, current_app, request
 from gd_auth.token import AuthToken, TokenBusinessLevel
-from marshmallow import Schema, fields
+from marshmallow import Schema, ValidationError, fields, validates_schema
 
 from celeryconfig import get_celery
 
@@ -27,9 +27,22 @@ SCAN_REDIS_PREFIX = 'scan'
 api = Blueprint('classify', __name__, url_prefix='/classify')
 
 
+class MetadataSchema(Schema):
+    customerId = fields.String()
+    orionGuid = fields.String()
+    entitlementId = fields.String()
+    product = fields.String()
+
+    @validates_schema
+    def orion_or_entitlement_validation(self, data, **kwargs):
+        if 'orionGuid' not in data and data.get('orionGuid', '') == '' and 'entitlementId' not in data and data.get('entitlementId', '') == '':
+            raise ValidationError('one of orionGuid or entitlementId is required')
+
+
 class ScanInput(Schema):
     uri = fields.URL()
     sitemap = fields.Bool()
+    metadata = fields.Nested(MetadataSchema)
 
 
 class ClassifyInput(Schema):
