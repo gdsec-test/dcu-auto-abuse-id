@@ -8,7 +8,7 @@ BUILD_BRANCH=origin/main
 define deploy_k8s
 	docker push $(DOCKERREPO):$(2)
 	cd k8s/$(1) && kustomize edit set image $$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKERREPO):$(2))
-	kubectl --context $(1)-dcu apply -k k8s/$(1)
+	kubectl --context $(3) apply -k k8s/$(1)
 	cd k8s/$(1) && kustomize edit set image $(DOCKERREPO):$(1)
 endef
 
@@ -77,22 +77,22 @@ test-build: prep
 .PHONY: prod-deploy
 prod-deploy: prod
 	@echo "----- deploying $(REPONAME) prod -----"
-	$(call deploy_k8s,prod,$(COMMIT))
+	$(call deploy_k8s,prod,$(COMMIT),prod-dcu)
 
 .PHONY: ote-deploy
 ote-deploy: ote
 	@echo "----- deploying $(REPONAME) ote -----"
-	$(call deploy_k8s,ote,ote)
+	$(call deploy_k8s,ote,ote,ote-dcu)
 
 .PHONY: dev-deploy
 dev-deploy: dev
 	@echo "----- deploying $(REPONAME) dev -----"
-	$(call deploy_k8s,dev,dev)
+	$(call deploy_k8s,dev,dev,dev-cset)
 
 .PHONY: test-deploy
 test-deploy: test-build
 	@echo "----- deploying $(REPONAME) test -----"
-	$(call deploy_k8s,test,test)
+	$(call deploy_k8s,test,test,test-cset)
 
 .PHONY: clean
 clean:
