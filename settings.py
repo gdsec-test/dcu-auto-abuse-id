@@ -10,8 +10,6 @@ class AppConfig(object):
     DB_HOST = 'localhost'
 
     def __init__(self):
-        self.DB_PASS = quote(os.getenv('DB_PASS', 'password'))
-        self.DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(self.DB_USER, self.DB_PASS, self.DB_HOST, self.DB)
         self.CACHE_SERVICE = os.getenv('REDIS', 'localhost')
 
 
@@ -20,6 +18,8 @@ class ProductionAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_p_phishv2'
     TOKEN_AUTHORITY = 'sso.gdcorp.tools'
+    DB_PASS = quote(os.getenv('DB_PASS', 'password'))
+    DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(DB_USER, DB_PASS, DB_HOST, DB)
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -30,6 +30,8 @@ class OTEAppConfig(AppConfig):
     DB_HOST = '10.22.9.209'
     DB_USER = 'sau_o_phish'
     TOKEN_AUTHORITY = 'sso.ote-gdcorp.tools'
+    DB_PASS = quote(os.getenv('DB_PASS', 'password'))
+    DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(DB_USER, DB_PASS, DB_HOST, DB)
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -40,6 +42,8 @@ class DevelopmentAppConfig(AppConfig):
     DB_HOST = 'mongodb.cset.int.dev-gdcorp.tools'
     DB_USER = 'devuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
+    DB_PASS = quote(os.getenv('DB_PASS', 'password'))
+    DBURL = 'mongodb://{}:{}@{}/?authSource={}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile=%2Fmongo_common_certs%2Fmongo_client.pem'.format(DB_USER, DB_PASS, DB_HOST, DB)
 
     def __init__(self):
         super(DevelopmentAppConfig, self).__init__()
@@ -50,6 +54,8 @@ class TestAppConfig(AppConfig):
     DB_HOST = 'mongodb.cset.int.dev-gdcorp.tools'
     DB_USER = 'testuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
+    DB_PASS = quote(os.getenv('DB_PASS', 'password'))
+    DBURL = 'mongodb://{}:{}@{}/?authSource={}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile=%2Fmongo_common_certs%2Fmongo_client.pem'.format(DB_USER, DB_PASS, DB_HOST, DB)
 
     def __init__(self):
         super(TestAppConfig, self).__init__()
