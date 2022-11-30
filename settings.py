@@ -19,7 +19,7 @@ class ProductionAppConfig(AppConfig):
     DB_USER = 'sau_p_phishv2'
     TOKEN_AUTHORITY = 'sso.gdcorp.tools'
     DB_PASS = quote(os.getenv('DB_PASS', 'password'))
-    DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(DB_USER, DB_PASS, DB_HOST, DB)
+    DBURL = f'mongodb://{DB_USER}:{DB_PASS}@{DB_HOST}/?authSource={DB}'
 
     def __init__(self):
         super(ProductionAppConfig, self).__init__()
@@ -31,7 +31,7 @@ class OTEAppConfig(AppConfig):
     DB_USER = 'sau_o_phish'
     TOKEN_AUTHORITY = 'sso.ote-gdcorp.tools'
     DB_PASS = quote(os.getenv('DB_PASS', 'password'))
-    DBURL = 'mongodb://{}:{}@{}/?authSource={}'.format(DB_USER, DB_PASS, DB_HOST, DB)
+    DBURL = f'mongodb://{DB_USER}:{DB_PASS}@{DB_HOST}/?authSource={DB}'
 
     def __init__(self):
         super(OTEAppConfig, self).__init__()
@@ -43,7 +43,8 @@ class DevelopmentAppConfig(AppConfig):
     DB_USER = 'devuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
     DB_PASS = quote(os.getenv('DB_PASS', 'password'))
-    DBURL = 'mongodb://{}:{}@{}/?authSource={}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile=%2Fmongo_common_certs%2Fmongo_client.pem'.format(DB_USER, DB_PASS, DB_HOST, DB)
+    CLIENT_CERT = os.getenv("MONGO_CLIENT_CERT", '')
+    DBURL = f'mongodb://{DB_USER}:{DB_PASS}@{DB_HOST}/?authSource={DB}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile={CLIENT_CERT}'
 
     def __init__(self):
         super(DevelopmentAppConfig, self).__init__()
@@ -55,7 +56,8 @@ class TestAppConfig(AppConfig):
     DB_USER = 'testuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
     DB_PASS = quote(os.getenv('DB_PASS', 'password'))
-    DBURL = 'mongodb://{}:{}@{}/?authSource={}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile=%2Fmongo_common_certs%2Fmongo_client.pem'.format(DB_USER, DB_PASS, DB_HOST, DB)
+    CLIENT_CERT = quote(os.getenv("MONGO_CLIENT_CERT", ''))
+    DBURL = f'mongodb://{DB_USER}:{DB_PASS}@{DB_HOST}/?authSource={DB}&readPreference=primary&directConnection=true&tls=true&tlsCertificateKeyFile={CLIENT_CERT}'
 
     def __init__(self):
         super(TestAppConfig, self).__init__()
