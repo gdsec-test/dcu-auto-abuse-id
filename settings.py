@@ -37,7 +37,7 @@ class OTEAppConfig(AppConfig):
 
 class DevelopmentAppConfig(AppConfig):
     DB = 'devphishstory'
-    DB_HOST = '10.36.190.222'
+    DB_HOST = 'mongodb.cset.int.dev-gdcorp.tools'
     DB_USER = 'devuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
 
@@ -47,7 +47,7 @@ class DevelopmentAppConfig(AppConfig):
 
 class TestAppConfig(AppConfig):
     DB = 'devphishstory'
-    DB_HOST = '10.36.190.222'
+    DB_HOST = 'mongodb.cset.int.dev-gdcorp.tools'
     DB_USER = 'testuser'
     TOKEN_AUTHORITY = 'sso.dev-gdcorp.tools'
 

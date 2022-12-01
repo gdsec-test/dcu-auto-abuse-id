@@ -1,9 +1,11 @@
 ---
-apiVersion: "networking.k8s.io/v1beta1"
-kind: "Ingress"
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: "auto-abuse-id"
-  namespace: "abuse-api-test"
+  name: auto-abuse-id
+  namespace: abuse-api-test
+  annotations:
+    kubernetes.io/ingress.class: nginx
 spec:
   tls:
     - hosts:
@@ -14,6 +16,9 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: "auto-abuse-id"
-          servicePort: 5000
+          service:
+            name: auto-abuse-id
+            port:
+              number: 5000
