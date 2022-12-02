@@ -53,3 +53,13 @@ spec:
               secretKeyRef:
                 name: apm-access
                 key: secret
+          - name: MONGO_CLIENT_CERT
+            value: /mongo_common_certs/mongo_client.pem
+          volumeMounts:
+          - name: tls-mongo-common-cert-files
+            mountPath: /mongo_common_certs
+            readOnly: true
+      volumes:
+        - name: tls-mongo-common-cert-files
+          secret:
+            secretName: tls-mongo-common-cert-files
