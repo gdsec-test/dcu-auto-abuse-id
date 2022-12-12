@@ -3,6 +3,7 @@ aniso8601==9.0.1
 attrs==20.3.0
 billiard==3.6.4.0
 celery>=5.2.6
+certifi==2022.12.07
 csetutils==0.2.1
 cffi==1.14.5
 dcdatabase==1.3
